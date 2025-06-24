@@ -1,4 +1,6 @@
-import model.Statistic;
+package server.storage;
+
+import server.model.Statistic;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
