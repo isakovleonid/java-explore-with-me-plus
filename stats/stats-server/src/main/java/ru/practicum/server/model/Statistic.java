@@ -1,11 +1,10 @@
-package server.model;
+package ru.practicum.server.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.net.InetAddress;
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
@@ -22,7 +21,7 @@ public class Statistic {
     @Column
     private String uri;
     @Column
-    private InetAddress ip;
+    private String ip;
     @Column
     private LocalDateTime timestamp;
 }

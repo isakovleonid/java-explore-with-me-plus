@@ -5,4 +5,4 @@ CREATE TABLE IF NOT EXISTS statistics
     app       VARCHAR     NOT NULL,
     ip        VARCHAR(16) NOT NULL,
     timestamp TIMESTAMP   NOT NULL
-)
+);
