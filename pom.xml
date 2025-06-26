@@ -68,19 +68,6 @@
 			<artifactId>lombok</artifactId>
 			<version>1.18.32</version>
 		</dependency>
-
-		<!-- Нужно удалить потому что они уже содержаться в spring-boot-starter-web -->
-		<dependency>
-			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct</artifactId>
-			<version>${mapstruct.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct-processor</artifactId>
-			<version>${mapstruct.version}</version>
-			<scope>provided</scope>
-		</dependency>
 	</dependencies>
 
 	<build>
