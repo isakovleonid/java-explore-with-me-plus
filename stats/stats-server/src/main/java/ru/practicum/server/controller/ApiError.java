@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
 
-import java.time.Instant;
-
 @AllArgsConstructor
 @Data
 public class ApiError {
