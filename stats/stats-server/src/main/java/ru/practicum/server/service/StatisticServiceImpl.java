@@ -2,7 +2,6 @@ package ru.practicum.server.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.practicum.dto.in.StatisticDto;
 import ru.practicum.dto.output.GetStatisticDto;
@@ -20,16 +19,13 @@ import java.util.List;
 public class StatisticServiceImpl implements StatisticService {
 
     private final StatisticRepository repository;
-    @Autowired
-    private StatisticMapper mapper;
+    private final StatisticMapper mapper;
 
     @Override
-    public StatisticDto addHit(StatisticDto statisticDto) {
+    public void addHit(StatisticDto statisticDto) {
         Statistic statisticToSave = mapper.toStatistic(statisticDto);
-        Statistic savedStatistic = repository.save(statisticToSave);
+        repository.save(statisticToSave);
         log.info("Hit with uri {} was saved", statisticDto.getUri());
-
-        return mapper.toStatisticDto(savedStatistic);
     }
 
     @Override
@@ -40,43 +36,24 @@ public class StatisticServiceImpl implements StatisticService {
         LocalDateTime dtStart = LocalDateTime.parse(start, formatter);
         LocalDateTime dtEnd = LocalDateTime.parse(end, formatter);
 
-        if (!uris.isEmpty()) {
-            if (unique) {
+        if (uris.isEmpty()) {
 
-                statistics = repository.findHitsByUriInAndTimestampBetweenAndDistinctIp(
-                        uris,
-                        dtStart,
-                        dtEnd
-                );
-                log.info("Retrieved {} statistics (unique IPs) for uris: {} from {} to {}", statistics.size(), uris, start, end);
+            statistics = repository.findHitsByTimestampBetween(
+                    dtStart,
+                    dtEnd,
+                    unique
+            );
+            log.info("Retrieved {} statistics for all uris from {} to {}, unique IPs: {}", statistics.size(), start, end, unique);
 
-            } else {
-
-                statistics = repository.findHitsByUriInAndTimestampBetween(
-                        uris,
-                        dtStart,
-                        dtEnd
-                );
-                log.info("Retrieved {} statistics (all IPs) for uris: {} from {} to {}", statistics.size(), uris, start, end);
-            }
         } else {
 
-            if (unique) {
-
-                statistics = repository.findHitsByTimestampBetweenAndDistinctIp(
-                        dtStart,
-                        dtEnd
-                );
-                log.info("Retrieved {} statistics (unique IPs) for all uris from {} to {}", statistics.size(), start, end);
-
-            } else {
-
-                statistics = repository.findHitsByTimestampBetween(
-                        dtStart,
-                        dtEnd
-                );
-                log.info("Retrieved {} statistics (all IPs) for all uris from {} to {}", statistics.size(), start, end);
-            }
+            statistics = repository.findHitsByUriInAndTimestampBetween(
+                    uris,
+                    dtStart,
+                    dtEnd,
+                    unique
+            );
+            log.info("Retrieved {} statistics for uris: {} from {} to {}, unique IPs: {}", statistics.size(), uris, start, end, unique);
         }
 
         return statistics;

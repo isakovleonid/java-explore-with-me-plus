@@ -6,7 +6,7 @@ import ru.practicum.dto.output.GetStatisticDto;
 import java.util.List;
 
 public interface StatisticService {
-    StatisticDto addHit(StatisticDto statisticDto);
+    void addHit(StatisticDto statisticDto);
 
     List<GetStatisticDto> getStatistic(String start, String end, List<String> uris, Boolean unique);
 }

@@ -20,9 +20,9 @@ public class StatisticController {
 
     @PostMapping("/hit")
     @ResponseStatus(HttpStatus.CREATED)
-    public StatisticDto addHit(@RequestBody StatisticDto statisticDto) {
+    public void addHit(@RequestBody StatisticDto statisticDto) {
         log.info("POST /hit - Adding hit: {}", statisticDto);
-        return service.addHit(statisticDto);
+        service.addHit(statisticDto);
     }
 
     @GetMapping("/stats")
@@ -35,5 +35,4 @@ public class StatisticController {
         log.info("GET /stats - Getting statistic for uris: {} from: {} to {}, unique: {}", uris, start, end, unique);
         return service.getStatistic(start, end, uris, unique);
     }
-
 }
