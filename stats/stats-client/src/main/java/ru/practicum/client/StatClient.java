@@ -28,29 +28,29 @@ public class StatClient {
                 .defaultStatusHandler(
                         HttpStatusCode::isError,
                         (request, response) -> {
-                            throw new StatisticClientException("Ошибка сервиса статистики: " + response.getStatusText());
+                            throw new StatisticClientException("Statistics service error: " + response.getStatusText());
                         })
                 .build();
     }
 
     public void hit(StatisticDto statisticDto) {
         try {
+            log.info("Sending statistics hit request to client");
             restClient.post()
                     .uri("/hit")
                     .body(statisticDto)
                     .retrieve()
-                    .toEntity(GetStatisticDto.class);
-            log.info("Запрос на сохранение статистики в клиенте");
+                    .toBodilessEntity();
         } catch (Exception e) {
-            log.error("Ошибка при сохранении статистики в клиенте: {}, {}", statisticDto, e.getMessage());
-            throw new StatisticClientException("Ошибка при отправке статистики", e);
+            log.error("Error saving statistics in client: {}, {}", statisticDto, e.getMessage());
+            throw new StatisticClientException("Error sending statistics", e);
         }
     }
 
     public List<GetStatisticDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         try {
-            log.info("Запрос на получение статистики в клиенте");
+            log.info("Requesting statistics from client");
             return restClient
                     .get()
                     .uri(uriBuilder -> uriBuilder.path("/stats")
@@ -63,8 +63,8 @@ public class StatClient {
                     .body(new ParameterizedTypeReference<>() {
                     });
         } catch (Exception e) {
-            log.error("Ошибка при получении статистики в клиенте параметры, {}", e.getMessage());
-            throw new StatisticClientException("Ошибка при получении статистики", e);
+            log.error("Error retrieving statistics from client: {}", e.getMessage());
+            throw new StatisticClientException("Error getting statistics", e);
         }
     }
 }
