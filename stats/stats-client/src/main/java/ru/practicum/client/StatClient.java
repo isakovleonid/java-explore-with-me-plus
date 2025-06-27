@@ -22,7 +22,7 @@ public class StatClient {
     private final RestClient restClient;
 
     @Autowired
-    public StatClient(@Value("${stats-server.url}") String statsUrl) {
+    public StatClient(@Value("${STATS_SERVER_URL}") String statsUrl) {
         this.restClient = RestClient.builder()
                 .baseUrl(statsUrl)
                 .defaultStatusHandler(
