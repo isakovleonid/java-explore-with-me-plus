@@ -1,6 +1,7 @@
 package ru.practicum.users.dto.in;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,11 +12,11 @@ import org.hibernate.validator.constraints.Length;
 @AllArgsConstructor
 @NoArgsConstructor
 public class NewUserRequest {
-    @NotEmpty
+    @NotBlank
     @Length(min = 6, max = 254)
     @Email
     String email;
-    @NotEmpty
+    @NotBlank
     @Length(min = 2, max = 250)
     String name;
 }
