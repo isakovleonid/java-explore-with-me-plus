@@ -12,7 +12,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query(value = """
             SELECT *
-            FROM users AS u 
+            FROM users AS u
             WHERE (:ids IS NULL OR u.id IN :ids)
             LIMIT :size
             OFFSET :from
