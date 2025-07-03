@@ -63,7 +63,7 @@ public class ErrorHandler {
                 "Integrity constraint has been violated.",
                 ex.getMessage(),
                 HttpStatus.CONFLICT,
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                LocalDateTime.now().format(formatter)
         );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
@@ -83,7 +83,7 @@ public class ErrorHandler {
                 "Incorrectly made request.",
                 message,
                 HttpStatus.BAD_REQUEST,
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                LocalDateTime.now().format(formatter)
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
