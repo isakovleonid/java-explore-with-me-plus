@@ -1,0 +1,224 @@
+package ru.practicum.events.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.category.model.Category;
+import ru.practicum.category.storage.CategoryRepository;
+import ru.practicum.events.dto.in.EventRequestStatusUpdateRequest;
+import ru.practicum.events.dto.in.NewEventDto;
+import ru.practicum.events.dto.in.UpdateEventUserRequest;
+import ru.practicum.events.dto.output.EventFullDto;
+import ru.practicum.events.dto.output.EventShortDto;
+import ru.practicum.events.dto.output.SwitchRequestsStatus;
+import ru.practicum.events.mapper.EventMapper;
+import ru.practicum.events.model.Event;
+import ru.practicum.events.model.State;
+import ru.practicum.events.storage.EventRepository;
+import ru.practicum.exceptions.*;
+import ru.practicum.requests.dto.ParticipationRequestDtoOut;
+import ru.practicum.requests.mapper.RequestMapper;
+import ru.practicum.requests.model.Request;
+import ru.practicum.requests.model.Status;
+import ru.practicum.requests.storage.RequestRepository;
+import ru.practicum.users.model.User;
+import ru.practicum.users.storage.UserRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static ru.practicum.constants.Methods.copyFields;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class EventServiceImpl {
+    private final EventMapper eventMapper;
+    private final StatClientService statClientService;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+    private final RequestRepository requestRepository;
+    private final EventRepository eventRepository;
+    private final RequestMapper requestMapper;
+
+    public SwitchRequestsStatus switchRequestsStatus(EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest, Long eventId, Long userId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " " + "not found"));
+        if (!event.getInitiator().getId().equals(userId)) {
+            throw new NoHavePermissionException("You do not have permission to update this event");
+        }
+        if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
+            return new SwitchRequestsStatus(requestRepository.findAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds()).stream()
+                    .map(requestMapper::toParticipationRequestDtoOut)
+                    .toList(),
+                    List.of());
+        }
+
+        EventFullDto eventFullDto = mapToFullDto(List.of(event)).getFirst();
+        long freeLimit = eventFullDto.getParticipantLimit() - eventFullDto.getConfirmedRequests();
+        if (freeLimit <= 0) {
+            throw new ConflictException("The participant limit has been reached");
+        }
+
+        List<Long> confirmedIds = eventRequestStatusUpdateRequest.getRequestIds().subList(0, (int) freeLimit);
+        List<Long> requestIds = eventRequestStatusUpdateRequest.getRequestIds().subList((int) freeLimit,
+                eventRequestStatusUpdateRequest.getRequestIds().size());
+
+        List<Request> requests = requestRepository.findAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds());
+
+        List<ParticipationRequestDtoOut> confirmed = requests.stream()
+                .filter(obj -> confirmedIds.contains(obj.getId()))
+                .map(requestMapper::toParticipationRequestDtoOut)
+                .toList();
+
+        requestRepository.setStatusForAllByIdIn(confirmedIds, Status.CONFIRMED);
+
+        List<ParticipationRequestDtoOut> rejected = requests.stream()
+                .filter(obj -> requestIds.contains(obj.getId()))
+                .map(requestMapper::toParticipationRequestDtoOut)
+                .toList();
+
+        requestRepository.setStatusForAllByIdIn(confirmedIds, Status.REJECTED);
+
+        return new SwitchRequestsStatus(confirmed, rejected);
+
+    }
+
+    public List<ParticipationRequestDtoOut> getRequests(Long userId, Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " " + "not found"));
+        if (!event.getInitiator().getId().equals(userId)) {
+            throw new NoHavePermissionException("You do not have permission to update this event");
+        }
+
+        List<Request> requests = requestRepository.findAllByEventIdAndRequesterId(eventId, userId);
+
+        return requests.stream()
+                .map(requestMapper::toParticipationRequestDtoOut)
+                .toList();
+    }
+
+    public EventFullDto updateEvent(UpdateEventUserRequest updateEventUserRequest, Long eventId, Long userId) {
+        Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
+        if (!event.getInitiator().getId().equals(userId)) {
+            throw new NoHavePermissionException("You do not have permission to update this event");
+        }
+        if (event.getState() == State.PUBLISHED) {
+            throw new OperationNotAllowedException("Only pending or canceled events can be changed");
+        }
+        dateValidation(updateEventUserRequest.getEventDate());
+
+        Category category = categoryRepository.findById(updateEventUserRequest.getCategory())
+                .orElseThrow(() -> new NotFoundException("Category not found"));
+
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        Event newEvent = eventMapper.toEvent(updateEventUserRequest, category, user);
+
+        copyFields(event, newEvent);
+        event = eventRepository.save(event);
+        return mapToFullDto(List.of(event)).getFirst();
+    }
+
+    public EventFullDto getEvent(Long eventId, Long userId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
+
+        if (!event.getInitiator().getId().equals(userId)) {
+            throw new NoHavePermissionException("No allowed to access this event");
+        }
+        return mapToFullDto(List.of(event)).getFirst();
+    }
+
+    @Transactional
+    public EventFullDto createEvent(NewEventDto newEventDto, Long userId) {
+        dateValidation(newEventDto.getEventDate());
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("user with id " + userId + " not found"));
+
+        Category category = categoryRepository.findById(newEventDto.getCategory())
+                .orElseThrow(() -> new NotFoundException("category with id " + newEventDto.getCategory() + " not found"));
+
+        Event event = eventMapper.toEvent(newEventDto, category, user);
+        event = eventRepository.save(event);
+        return mapToFullDto(List.of(event)).getFirst();
+    }
+
+    @Transactional(readOnly = true)
+    public List<EventShortDto> getEventsForUser(Long userId, Integer from, Integer to) {
+        if (to < from) {
+            throw new IncorrectlyMadeRequestException("to must be greater than from");
+        }
+        PageRequest pageRequest = PageRequest.of(from / (to - from), to - from);
+
+        List<Event> events = eventRepository.findAllByInitiatorId(userId, pageRequest);
+        Map<Long, Long> views = Map.of();
+
+        if (events.isEmpty()) {
+            return List.of();
+        }
+        try {
+            views = statClientService.getEventsView(events);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        List<EventShortDto> shortDtos = events
+                .stream()
+                .map(eventMapper::toEventShortDto)
+                .toList();
+
+        if (!views.isEmpty()) {
+            for (EventShortDto eventShortDto : shortDtos) {
+                eventShortDto.setViews(views.get(eventShortDto.getId()));
+            }
+        } else {
+            shortDtos.forEach(eventShortDto -> eventShortDto.setViews(0L));
+        }
+        return shortDtos;
+    }
+
+    private void dateValidation(LocalDateTime date) {
+        if (!date.isAfter(LocalDateTime.now().plusHours(2).minusSeconds(5))) {
+            throw new DateException("The date must be 2 hours after now. Value: " + date);
+        }
+    }
+
+    private List<EventFullDto> mapToFullDto(List<Event> events) {
+        List<Long> ids = events.stream()
+                .map(Event::getId)
+                .toList();
+        Map<Long, Long> confirmedRequests = getRequests(ids, Status.CONFIRMED);
+        Map<Long, Long> rejectedRequests = getRequests(ids, Status.REJECTED);
+        Map<Long, Long> views = statClientService.getEventsView(events);
+
+        List<EventFullDto> eventFullDtos = events.stream()
+                .map(eventMapper::toEventFullDto).toList();
+        for (EventFullDto eventFullDto : eventFullDtos) {
+            eventFullDto.setConfirmedRequests(confirmedRequests.getOrDefault(eventFullDto.getId(), 0L));
+            eventFullDto.setViews(views.getOrDefault(eventFullDto.getId(), 0L));
+            if (!eventFullDto.getRequestModeration() || eventFullDto.getParticipantLimit() == 0) {
+                eventFullDto.setConfirmedRequests(eventFullDto.getConfirmedRequests() +
+                        rejectedRequests.getOrDefault(eventFullDto.getId(), 0L));
+            }
+        }
+
+        return eventFullDtos;
+    }
+
+    private Map<Long, Long> getRequests(List<Long> events, Status status) {
+        return requestRepository.countAllByEventIdInAndStatus(events, status).stream()
+                .collect(Collectors.toMap(eventId -> (Long) eventId[0],
+                        requestCount -> (Long) requestCount[1]));
+    }
+
+    private Map<Long, User> getUsersByEventIds(List<Long> eventIds) {
+        return eventRepository.getUsersByEventIds(eventIds).stream()
+                .collect(Collectors.toMap(eventId -> (Long) eventId[0],
+                        user -> (User) user[1]));
+    }
+}

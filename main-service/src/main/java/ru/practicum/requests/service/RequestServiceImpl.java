@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.events.model.Event;
 import ru.practicum.events.model.State;
+import ru.practicum.events.storage.EventRepository;
 import ru.practicum.exceptions.DuplicateException;
 import ru.practicum.exceptions.NotFoundException;
 import ru.practicum.requests.dto.ParticipationRequestDtoOut;

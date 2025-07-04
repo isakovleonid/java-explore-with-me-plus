@@ -1,5 +1,6 @@
 package ru.practicum.events.dto.in;
 
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -23,6 +24,7 @@ public class NewEventDto {
     @Length(min = 20, max = 7000)
     String description;
     @NotNull
+    @Future
     LocalDateTime eventDate;
     @NotNull
     Location location;

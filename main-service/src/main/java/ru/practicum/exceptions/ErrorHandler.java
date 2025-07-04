@@ -12,22 +12,90 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
+
+import static ru.practicum.constants.Fields.FORMATTER;
 
 @RestControllerAdvice
 @Slf4j
 public class ErrorHandler {
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                List.of(Arrays.toString(ex.getStackTrace())),
+                "For the requested operation the conditions are not met.",
+                ex.getMessage(),
+                HttpStatus.CONFLICT,
+                LocalDateTime.now().format(FORMATTER)
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(IncorrectlyMadeRequestException.class)
+    public ResponseEntity<ErrorResponse> handleIncorrectlyRequest(IncorrectlyMadeRequestException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                List.of(Arrays.toString(ex.getStackTrace())),
+                "Parameters invalid",
+                ex.getMessage(),
+                HttpStatus.FORBIDDEN,
+                LocalDateTime.now().format(FORMATTER)
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(OperationNotAllowedException.class)
+    public ResponseEntity<ErrorResponse> handleOperationNotAllowed(OperationNotAllowedException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                List.of(Arrays.toString(ex.getStackTrace())),
+                "For the requested operation the conditions are not met",
+                ex.getMessage(),
+                HttpStatus.FORBIDDEN,
+                LocalDateTime.now().format(FORMATTER)
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(NoHavePermissionException.class)
+    public ResponseEntity<ErrorResponse> handleNoHavePermission(NoHavePermissionException e) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                List.of(Arrays.toString(e.getStackTrace())),
+                "This user no have permission to access this object",
+                e.getMessage(),
+                HttpStatus.FORBIDDEN,
+                LocalDateTime.now().format(FORMATTER)
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(DateException.class)
+    public ResponseEntity<ErrorResponse> handleDateException(DateException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                List.of(Arrays.toString(ex.getStackTrace())),
+                "For the requested operation the conditions are not met.",
+                ex.getMessage(),
+                HttpStatus.FORBIDDEN,
+                LocalDateTime.now().format(FORMATTER)
+        );
+        log.error("DateException: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
         ErrorResponse response = new ErrorResponse(
-                List.of(),
+                List.of(Arrays.toString(ex.getStackTrace())),
                 "The required object was not found.",
                 ex.getMessage(),
                 HttpStatus.NOT_FOUND,
-                LocalDateTime.now().format(formatter)
+                LocalDateTime.now().format(FORMATTER)
         );
 
         log.error("Not found error: {}", ex.getMessage());
@@ -45,11 +113,11 @@ public class ErrorHandler {
                 firstError.getRejectedValue());
 
         ErrorResponse response = new ErrorResponse(
-                List.of(),
+                List.of(Arrays.toString(ex.getStackTrace())),
                 "Incorrectly made request.",
                 message,
                 HttpStatus.BAD_REQUEST,
-                LocalDateTime.now().format(formatter)
+                LocalDateTime.now().format(FORMATTER)
         );
 
         log.error("Method Argument Not Valid: {}", message);
@@ -60,11 +128,11 @@ public class ErrorHandler {
     @ExceptionHandler(DuplicateException.class)
     public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateException ex) {
         ErrorResponse response = new ErrorResponse(
-                List.of(),
+                List.of(Arrays.toString(ex.getStackTrace())),
                 "Integrity constraint has been violated.",
                 ex.getMessage(),
                 HttpStatus.CONFLICT,
-                LocalDateTime.now().format(formatter)
+                LocalDateTime.now().format(FORMATTER)
         );
 
         log.error("Duplicate error: {}", ex.getMessage());
@@ -81,11 +149,11 @@ public class ErrorHandler {
         );
 
         ErrorResponse response = new ErrorResponse(
-                List.of(),
+                List.of(Arrays.toString(ex.getStackTrace())),
                 "Incorrectly made request.",
                 message,
                 HttpStatus.BAD_REQUEST,
-                LocalDateTime.now().format(formatter)
+                LocalDateTime.now().format(FORMATTER)
         );
 
         log.error("Method Argument Type Mismatch: {}", message);
@@ -96,11 +164,11 @@ public class ErrorHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
         ErrorResponse response = new ErrorResponse(
-                List.of(),
+                List.of(Arrays.toString(ex.getStackTrace())),
                 "For the requested operation the conditions are not met.",
                 ex.getMessage(),
                 HttpStatus.CONFLICT,
-                LocalDateTime.now().format(formatter)
+                LocalDateTime.now().format(FORMATTER)
         );
 
         log.error("Category is not empty: {}", ex.getMessage());
