@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.users.dto.in.NewUserRequest;
+import ru.practicum.users.dto.in.UserAdminParam;
 import ru.practicum.users.dto.output.UserDto;
 import ru.practicum.users.service.UserService;
 
@@ -22,11 +23,12 @@ public class UserAdminController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<UserDto> getAll(@RequestParam(required = false, defaultValue = "") List<Integer> ids,
+    public List<UserDto> getAll(@RequestParam(required = false, defaultValue = "") List<Long> ids,
                                 @PositiveOrZero @RequestParam(required = false, defaultValue = "0") int from,
                                 @Positive @RequestParam(required = false, defaultValue = "10") int size) {
         log.info("GET /admin/users - Getting users");
-        return service.getAll(ids, from, size);
+        UserAdminParam params = new UserAdminParam(ids, from, size);
+        return service.getAll(params);
     }
 
     @PostMapping

@@ -14,7 +14,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
-    @Column
+    @Column(unique = true)
     String email;
     @Column
     String name;

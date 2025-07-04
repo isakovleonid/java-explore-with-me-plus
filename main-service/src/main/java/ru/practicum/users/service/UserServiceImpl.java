@@ -2,6 +2,9 @@ package ru.practicum.users.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,6 +12,7 @@ import ru.practicum.exceptions.DuplicateException;
 import ru.practicum.exceptions.NotFoundException;
 import ru.practicum.users.dto.in.NewUserRequest;
 
+import ru.practicum.users.dto.in.UserAdminParam;
 import ru.practicum.users.dto.output.UserDto;
 import ru.practicum.users.mapper.UserMapper;
 import ru.practicum.users.model.User;
@@ -23,11 +27,20 @@ public class UserServiceImpl implements UserService {
     private final UserRepository repository;
     private final UserMapper mapper;
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Override
-    public List<UserDto> getAll(List<Integer> ids, int from, int size) {
-        return repository.findUsersByIds(ids, from, size)
-                .stream()
+    public List<UserDto> getAll(UserAdminParam params) {
+        Page<User> usersPage;
+        int pageNumber = params.getFrom() / params.getSize();
+        Pageable pageable = PageRequest.of(pageNumber, params.getSize());
+
+        if (params.getIds() != null && !params.getIds().isEmpty()) {
+            usersPage = repository.findAllByIdIn(params.getIds(), pageable);
+        } else {
+            usersPage = repository.findAll(pageable);
+        }
+
+        return usersPage.stream()
                 .map(mapper::toUserDto)
                 .toList();
     }
