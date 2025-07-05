@@ -1,11 +1,13 @@
 package ru.practicum.compilation.dto.in;
 
 import jakarta.validation.constraints.NotEmpty;
+import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.UniqueElements;
 
 import java.util.List;
 
+@Data
 public class NewCompilationDto {
     @UniqueElements
     List<Long> events;
