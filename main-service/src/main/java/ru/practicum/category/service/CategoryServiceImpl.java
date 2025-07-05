@@ -41,12 +41,16 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto update(Long id, NewCategoryDto newCategory) {
         Category existingCategory = getCategoryOrThrow(id);
-        checkCategoryNameExists(newCategory.getName());
+
+        if (!existingCategory.getName().equals(newCategory.getName())) {
+            checkCategoryNameExists(newCategory.getName());
+        }
 
         existingCategory.setName(newCategory.getName());
 
         Category updatedCategory = repository.save(existingCategory);
-        log.info("Category was updated: {}", updatedCategory);
+        log.info("Category was updated with id={}, old name='{}', new name='{}'",
+                id, existingCategory.getName(), newCategory.getName());
         return mapper.toCategoryDto(updatedCategory);
     }
 
