@@ -32,7 +32,7 @@ public class CategoryAdminController {
 
     @PatchMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public CategoryDto update(@PathVariable("id") Long id, @RequestBody NewCategoryDto category) {
+    public CategoryDto update(@PathVariable("id") Long id, @Valid @RequestBody NewCategoryDto category) {
         log.info("PATCH /admin/categories/{} - Update category", id);
         return service.update(id, category);
     }

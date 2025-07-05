@@ -12,7 +12,7 @@ public interface CategoryService {
 
     CategoryDto update(Long id, NewCategoryDto category);
 
-    List<CategoryDto> getAll(int from, int size);
+    List<CategoryDto> findAll(int from, int size);
 
-    CategoryDto getCategoryById(Long id);
+    CategoryDto findById(Long id);
 }

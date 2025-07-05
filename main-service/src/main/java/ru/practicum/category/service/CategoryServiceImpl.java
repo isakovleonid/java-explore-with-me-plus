@@ -26,36 +26,33 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDto add(NewCategoryDto newCategory) {
-        if (repository.existsByName(newCategory.getName())) {
-            throw new DuplicateException("Category already exists: " +  newCategory.getName());
-        }
+        checkCategoryNameExists(newCategory.getName());
         Category category = repository.save(mapper.toCategory(newCategory));
-        log.info("Category was created: {}", newCategory);
+        log.info("Category was created: {}", category);
         return mapper.toCategoryDto(category);
     }
 
     @Override
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw new NotFoundException(String.format("Category with id=%d was not found", id));
-        }
+        Category category = getCategoryOrThrow(id);
         repository.deleteById(id);
-        log.info("Category with id={} was deleted", id);
+        log.info("Category was deleted: {}", category);
     }
 
     @Override
-    public CategoryDto update(Long id, NewCategoryDto category) {
-        Category existingCategory = repository.findById(id)
-                .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", id)));
+    public CategoryDto update(Long id, NewCategoryDto newCategory) {
+        Category existingCategory = getCategoryOrThrow(id);
+        checkCategoryNameExists(newCategory.getName());
 
-        existingCategory.setName(category.getName());
+        existingCategory.setName(newCategory.getName());
 
         Category updatedCategory = repository.save(existingCategory);
+        log.info("Category was updated: {}", updatedCategory);
         return mapper.toCategoryDto(updatedCategory);
     }
 
     @Override
-    public List<CategoryDto> getAll(int from, int size) {
+    public List<CategoryDto> findAll(int from, int size) {
         int pageNumber = from / size;
         Pageable pageable = PageRequest.of(pageNumber, size);
         Page<Category> page = repository.findAll(pageable);
@@ -66,11 +63,19 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryDto getCategoryById(Long id) {
-        Optional<Category> category = repository.findById(id);
-        if (category.isEmpty()) {
-            throw new NotFoundException(String.format("Category with id=%d was not found", id));
+    public CategoryDto findById(Long id) {
+        Category category = getCategoryOrThrow(id);
+        return mapper.toCategoryDto(category);
+    }
+
+    private void checkCategoryNameExists(String name) {
+        if (repository.existsByName(name)) {
+            throw new DuplicateException("Category already exists: " + name);
         }
-        return mapper.toCategoryDto(category.get());
+    }
+
+    private Category getCategoryOrThrow(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", id)));
     }
 }

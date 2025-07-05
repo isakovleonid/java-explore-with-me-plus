@@ -18,16 +18,16 @@ public class CategoryPublicController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<CategoryDto> getAll(@RequestParam(required = false, defaultValue = "0") int from,
+    public List<CategoryDto> getCategories(@RequestParam(required = false, defaultValue = "0") int from,
                                     @RequestParam(required = false, defaultValue = "10") int size) {
         log.info("GET /categories - Getting categories");
-        return service.getAll(from, size);
+        return service.findAll(from, size);
     }
 
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public CategoryDto getCategoryById(@PathVariable("id") Long id) {
         log.info("GET /categories/{} - Getting category by id", id);
-        return service.getCategoryById(id);
+        return service.findById(id);
     }
 }
