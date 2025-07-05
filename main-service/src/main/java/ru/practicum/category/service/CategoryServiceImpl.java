@@ -20,13 +20,13 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class CategoryServiceImpl implements CategoryService {
-    private final CategoryRepository repository;
+    private final CategoryRepository categoryRepository;
     private final CategoryMapper mapper;
 
     @Override
     public CategoryDto add(NewCategoryDto newCategory) {
         checkCategoryNameExists(newCategory.getName());
-        Category category = repository.save(mapper.toCategory(newCategory));
+        Category category = categoryRepository.save(mapper.toCategory(newCategory));
         log.info("Category was created: {}", category);
         return mapper.toCategoryDto(category);
     }
@@ -34,7 +34,14 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void delete(Long id) {
         Category category = getCategoryOrThrow(id);
-        repository.deleteById(id);
+
+        /**
+         * Нужно реализовать в eventRepository метод existsByCategoryId(Long id)
+         */
+        /*if (eventRepository.existsByCategoryId(id)) {
+            throw new ConflictException(String.format("Cannot delete category with id=%d because it has linked events", id));
+        }*/
+        categoryRepository.deleteById(id);
         log.info("Category was deleted: {}", category);
     }
 
@@ -48,7 +55,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         existingCategory.setName(newCategory.getName());
 
-        Category updatedCategory = repository.save(existingCategory);
+        Category updatedCategory = categoryRepository.save(existingCategory);
         log.info("Category was updated with id={}, old name='{}', new name='{}'",
                 id, existingCategory.getName(), newCategory.getName());
         return mapper.toCategoryDto(updatedCategory);
@@ -58,7 +65,7 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryDto> findAll(int from, int size) {
         int pageNumber = from / size;
         Pageable pageable = PageRequest.of(pageNumber, size);
-        Page<Category> page = repository.findAll(pageable);
+        Page<Category> page = categoryRepository.findAll(pageable);
 
         return page.getContent().stream()
                 .map(mapper::toCategoryDto)
@@ -72,13 +79,13 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     private void checkCategoryNameExists(String name) {
-        if (repository.existsByName(name)) {
+        if (categoryRepository.existsByName(name)) {
             throw new DuplicateException("Category already exists: " + name);
         }
     }
 
     private Category getCategoryOrThrow(Long id) {
-        return repository.findById(id)
+        return categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", id)));
     }
 }

@@ -91,4 +91,19 @@ public class ErrorHandler {
         log.error("Method Argument Type Mismatch: {}", message);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
+        ErrorResponse response = new ErrorResponse(
+                List.of(),
+                "For the requested operation the conditions are not met.",
+                ex.getMessage(),
+                HttpStatus.CONFLICT,
+                LocalDateTime.now().format(formatter)
+        );
+
+        log.error("Category is not empty: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
 }
