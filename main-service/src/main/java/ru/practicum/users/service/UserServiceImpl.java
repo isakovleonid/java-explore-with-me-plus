@@ -49,7 +49,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto add(NewUserRequest newUserRequest) {
         if (repository.existsByEmail(newUserRequest.getEmail())) {
-            throw new DuplicateException("Email already exists emile: " +  newUserRequest.getEmail());
+            throw new DuplicateException("Email already exists: " +  newUserRequest.getEmail());
         }
         User user = repository.save(mapper.toUser(newUserRequest));
         log.info("User was created: {}", user);

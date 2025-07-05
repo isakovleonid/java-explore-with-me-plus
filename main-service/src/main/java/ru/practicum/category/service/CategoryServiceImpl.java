@@ -1,0 +1,91 @@
+package ru.practicum.category.service;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import ru.practicum.category.dto.in.NewCategoryDto;
+import ru.practicum.category.dto.output.CategoryDto;
+import ru.practicum.category.mapper.CategoryMapper;
+import ru.practicum.category.model.Category;
+import ru.practicum.category.storage.CategoryRepository;
+import ru.practicum.exceptions.DuplicateException;
+import ru.practicum.exceptions.NotFoundException;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class CategoryServiceImpl implements CategoryService {
+    private final CategoryRepository categoryRepository;
+    private final CategoryMapper mapper;
+
+    @Override
+    public CategoryDto add(NewCategoryDto newCategory) {
+        checkCategoryNameExists(newCategory.getName());
+        Category category = categoryRepository.save(mapper.toCategory(newCategory));
+        log.info("Category was created: {}", category);
+        return mapper.toCategoryDto(category);
+    }
+
+    @Override
+    public void delete(Long id) {
+        Category category = getCategoryOrThrow(id);
+
+        /**
+         * Нужно реализовать в eventRepository метод existsByCategoryId(Long id)
+         */
+        /*if (eventRepository.existsByCategoryId(id)) {
+            throw new ConflictException(String.format("Cannot delete category with id=%d because it has linked events", id));
+        }*/
+        categoryRepository.deleteById(id);
+        log.info("Category was deleted: {}", category);
+    }
+
+    @Override
+    public CategoryDto update(Long id, NewCategoryDto newCategory) {
+        Category existingCategory = getCategoryOrThrow(id);
+
+        if (!existingCategory.getName().equals(newCategory.getName())) {
+            checkCategoryNameExists(newCategory.getName());
+        }
+
+        existingCategory.setName(newCategory.getName());
+
+        Category updatedCategory = categoryRepository.save(existingCategory);
+        log.info("Category was updated with id={}, old name='{}', new name='{}'",
+                id, existingCategory.getName(), newCategory.getName());
+        return mapper.toCategoryDto(updatedCategory);
+    }
+
+    @Override
+    public List<CategoryDto> findAll(int from, int size) {
+        int pageNumber = from / size;
+        Pageable pageable = PageRequest.of(pageNumber, size);
+        Page<Category> page = categoryRepository.findAll(pageable);
+
+        return page.getContent().stream()
+                .map(mapper::toCategoryDto)
+                .toList();
+    }
+
+    @Override
+    public CategoryDto findById(Long id) {
+        Category category = getCategoryOrThrow(id);
+        return mapper.toCategoryDto(category);
+    }
+
+    private void checkCategoryNameExists(String name) {
+        if (categoryRepository.existsByName(name)) {
+            throw new DuplicateException("Category already exists: " + name);
+        }
+    }
+
+    private Category getCategoryOrThrow(Long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found", id)));
+    }
+}
