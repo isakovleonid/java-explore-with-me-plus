@@ -15,7 +15,6 @@ import ru.practicum.exceptions.DuplicateException;
 import ru.practicum.exceptions.NotFoundException;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
