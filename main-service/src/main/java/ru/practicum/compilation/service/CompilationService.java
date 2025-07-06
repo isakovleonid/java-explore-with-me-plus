@@ -12,6 +12,8 @@ import ru.practicum.compilation.dto.output.CompilationDto;
 import ru.practicum.compilation.mapper.CompilationMapper;
 import ru.practicum.compilation.model.Compilation;
 import ru.practicum.compilation.storage.CompilationRepository;
+import ru.practicum.events.model.Event;
+import ru.practicum.events.storage.EventRepository;
 import ru.practicum.exceptions.NotFoundException;
 
 import java.util.List;
@@ -23,6 +25,7 @@ public class CompilationService {
 
     private final CompilationRepository compilationRepository;
     private final CompilationMapper compilationMapper;
+    private final EventRepository eventRepository;
 
     public List<CompilationDto> findBy(CompilationPublicParam param) {
         log.info("Fetching compilations with params: {}", param);
@@ -31,7 +34,12 @@ public class CompilationService {
         Page<Compilation> compilationPage = compilationRepository.findByPinned(param.getPinned(), pageRequest);
 
         List<CompilationDto> compilationDtos = compilationPage.stream()
-                .map(compilationMapper::toDto)
+                .map(compilation -> {
+                    List<Event> events = eventRepository.findAllById(compilation.getEvents().stream()
+                            .map(Event::getId)
+                            .toList());
+                    return compilationMapper.toDto(compilation);
+                })
                 .toList();
 
         log.info("Fetched {} compilations", compilationDtos.size());
@@ -43,6 +51,10 @@ public class CompilationService {
 
         Compilation compilation = findCompById(compId);
 
+        List<Event> events = eventRepository.findAllById(compilation.getEvents().stream()
+                .map(Event::getId)
+                .toList());
+
         CompilationDto compilationDto = compilationMapper.toDto(compilation);
         log.info("Fetched compilation: {}", compilationDto);
 
@@ -52,7 +64,9 @@ public class CompilationService {
     public CompilationDto add(NewCompilationDto dto) {
         log.info("Creating new compilation for events: {}", dto.getEvents());
 
-        Compilation compilationToSave = compilationMapper.toEntity(dto);
+        List<Event> events = eventRepository.findAllById(dto.getEvents());
+
+        Compilation compilationToSave = compilationMapper.toEntity(dto, events);
         Compilation savedCompilation = compilationRepository.save(compilationToSave);
 
         log.info("Compilation with id: {} was created", savedCompilation.getId());
@@ -73,7 +87,9 @@ public class CompilationService {
 
         Compilation findedCompilation = findCompById(compId);
 
-        Compilation compilationToUpdate = compilationMapper.updateEntity(updateCompilationRequest, findedCompilation);
+        List<Event> events = eventRepository.findAllById(updateCompilationRequest.getEvents());
+
+        Compilation compilationToUpdate = compilationMapper.updateEntity(updateCompilationRequest, findedCompilation, events);
 
         Compilation updatedCompilation = compilationRepository.save(compilationToUpdate);
 
