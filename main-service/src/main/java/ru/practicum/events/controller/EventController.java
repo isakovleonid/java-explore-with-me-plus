@@ -6,10 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.events.dto.in.EventRequestStatusUpdateRequest;
 import ru.practicum.events.dto.in.NewEventDto;
 import ru.practicum.events.dto.in.UpdateEventUserRequest;
 import ru.practicum.events.dto.output.EventFullDto;
 import ru.practicum.events.dto.output.EventShortDto;
+import ru.practicum.events.dto.output.SwitchRequestsStatus;
 import ru.practicum.events.service.EventServiceImpl;
 import ru.practicum.requests.dto.ParticipationRequestDtoOut;
 
@@ -21,6 +23,14 @@ import java.util.List;
 @Slf4j
 public class EventController {
     private final EventServiceImpl eventService;
+
+    @PatchMapping("/{eventId}/requests")
+    @ResponseStatus(HttpStatus.OK)
+    public SwitchRequestsStatus switchRequestsStatus(@PathVariable Long eventId,
+                                                           @RequestBody @Validated EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest,
+                                                           @PathVariable Long id) {
+        return eventService.switchRequestsStatus(eventRequestStatusUpdateRequest, eventId, id);
+    }
 
     @GetMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
