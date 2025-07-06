@@ -12,7 +12,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @RestControllerAdvice
 @Slf4j
@@ -23,7 +22,6 @@ public class ErrorHandler {
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
         ErrorResponse response = new ErrorResponse(
-                List.of(),
                 "The required object was not found.",
                 ex.getMessage(),
                 HttpStatus.NOT_FOUND,
@@ -45,7 +43,6 @@ public class ErrorHandler {
                 firstError.getRejectedValue());
 
         ErrorResponse response = new ErrorResponse(
-                List.of(),
                 "Incorrectly made request.",
                 message,
                 HttpStatus.BAD_REQUEST,
@@ -60,7 +57,6 @@ public class ErrorHandler {
     @ExceptionHandler(DuplicateException.class)
     public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateException ex) {
         ErrorResponse response = new ErrorResponse(
-                List.of(),
                 "Integrity constraint has been violated.",
                 ex.getMessage(),
                 HttpStatus.CONFLICT,
@@ -81,7 +77,6 @@ public class ErrorHandler {
         );
 
         ErrorResponse response = new ErrorResponse(
-                List.of(),
                 "Incorrectly made request.",
                 message,
                 HttpStatus.BAD_REQUEST,
@@ -96,7 +91,6 @@ public class ErrorHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
         ErrorResponse response = new ErrorResponse(
-                List.of(),
                 "For the requested operation the conditions are not met.",
                 ex.getMessage(),
                 HttpStatus.CONFLICT,
