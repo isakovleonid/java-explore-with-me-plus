@@ -20,20 +20,20 @@ CREATE TABLE IF NOT EXISTS locations
 
 CREATE TABLE IF NOT EXISTS events
 (
-    id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    annotation        VARCHAR(2000)                                       NOT NULL,
-    category_id       BIGINT REFERENCES categories (id) ON DELETE CASCADE NOT NULL,
-    createdOn         TIMESTAMP                                           NOT NULL,
-    description       VARCHAR(7000)                                       NOT NULL,
-    eventDate         TIMESTAMP                                           NOT NULL,
-    location_id       BIGINT REFERENCES locations (id) ON DELETE CASCADE  NOT NULL,
-    paid              BOOLEAN DEFAULT false                               NOT NULL,
-    participantLimit  INT     DEFAULT 0                                   NOT NULL,
-    publishedOn       TIMESTAMP                                           NOT NULL,
-    state             VARCHAR DEFAULT 'PENDING'                           NOT NULL CHECK (state IN ('PENDING', 'PUBLISHED', 'CANCELLED')),
-    requestModeration BOOLEAN DEFAULT true                                NOT NULL,
-    title             VARCHAR(170)                                        NOT NULL,
-    initiator_id      BIGINT REFERENCES users (id)                        NOT NULL
+    id                 BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    annotation         VARCHAR(2000)                                       NOT NULL,
+    category_id        BIGINT REFERENCES categories (id) ON DELETE CASCADE NOT NULL,
+    created_on         TIMESTAMP                                           NOT NULL,
+    description        VARCHAR(7000)                                       NOT NULL,
+    event_date         TIMESTAMP                                           NOT NULL,
+    location_id        BIGINT REFERENCES locations (id) ON DELETE CASCADE  NOT NULL,
+    paid               BOOLEAN DEFAULT false                               NOT NULL,
+    participant_limit  INT     DEFAULT 0                                   NOT NULL,
+    published_on       TIMESTAMP,
+    state              VARCHAR DEFAULT 'PENDING'                           NOT NULL CHECK (state IN ('PENDING', 'PUBLISHED', 'CANCELLED')),
+    request_moderation BOOLEAN DEFAULT true                                NOT NULL,
+    title              VARCHAR(170)                                        NOT NULL,
+    initiator_id       BIGINT REFERENCES users (id)                        NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS compilations
