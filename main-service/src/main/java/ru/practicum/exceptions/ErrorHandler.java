@@ -21,19 +21,6 @@ import static ru.practicum.constants.Fields.FORMATTER;
 @Slf4j
 public class ErrorHandler {
 
-    @ResponseStatus(HttpStatus.CONFLICT)
-    @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex) {
-        ErrorResponse errorResponse = new ErrorResponse(
-                List.of(Arrays.toString(ex.getStackTrace())),
-                "For the requested operation the conditions are not met.",
-                ex.getMessage(),
-                HttpStatus.CONFLICT,
-                LocalDateTime.now().format(FORMATTER)
-        );
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-    }
-
     @ResponseStatus(HttpStatus.FORBIDDEN)
     @ExceptionHandler(IncorrectlyMadeRequestException.class)
     public ResponseEntity<ErrorResponse> handleIncorrectlyRequest(IncorrectlyMadeRequestException ex) {
