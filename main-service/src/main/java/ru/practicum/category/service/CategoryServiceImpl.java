@@ -11,6 +11,8 @@ import ru.practicum.category.dto.output.CategoryDto;
 import ru.practicum.category.mapper.CategoryMapper;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.storage.CategoryRepository;
+import ru.practicum.events.storage.EventRepository;
+import ru.practicum.exceptions.ConflictException;
 import ru.practicum.exceptions.DuplicateException;
 import ru.practicum.exceptions.NotFoundException;
 
@@ -22,6 +24,7 @@ import java.util.List;
 public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper mapper;
+    private final EventRepository eventRepository;
 
     @Override
     public CategoryDto add(NewCategoryDto newCategory) {
@@ -35,12 +38,10 @@ public class CategoryServiceImpl implements CategoryService {
     public void delete(Long id) {
         Category category = getCategoryOrThrow(id);
 
-        /**
-         * Нужно реализовать в eventRepository метод existsByCategoryId(Long id)
-         */
-        /*if (eventRepository.existsByCategoryId(id)) {
+
+        if (eventRepository.existsByCategoryId(id)) {
             throw new ConflictException(String.format("Cannot delete category with id=%d because it has linked events", id));
-        }*/
+        }
         categoryRepository.deleteById(id);
         log.info("Category was deleted: {}", category);
     }

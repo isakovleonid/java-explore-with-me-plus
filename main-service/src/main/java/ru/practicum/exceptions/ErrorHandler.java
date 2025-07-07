@@ -11,9 +11,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
 
 import static ru.practicum.constants.Fields.FORMATTER;
 
@@ -25,7 +22,6 @@ public class ErrorHandler {
     @ExceptionHandler(IncorrectlyMadeRequestException.class)
     public ResponseEntity<ErrorResponse> handleIncorrectlyRequest(IncorrectlyMadeRequestException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-                List.of(Arrays.toString(ex.getStackTrace())),
                 "Parameters invalid",
                 ex.getMessage(),
                 HttpStatus.FORBIDDEN,
@@ -38,7 +34,6 @@ public class ErrorHandler {
     @ExceptionHandler(OperationNotAllowedException.class)
     public ResponseEntity<ErrorResponse> handleOperationNotAllowed(OperationNotAllowedException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-                List.of(Arrays.toString(ex.getStackTrace())),
                 "For the requested operation the conditions are not met",
                 ex.getMessage(),
                 HttpStatus.FORBIDDEN,
@@ -51,7 +46,6 @@ public class ErrorHandler {
     @ExceptionHandler(NoHavePermissionException.class)
     public ResponseEntity<ErrorResponse> handleNoHavePermission(NoHavePermissionException e) {
         ErrorResponse errorResponse = new ErrorResponse(
-                List.of(Arrays.toString(e.getStackTrace())),
                 "This user no have permission to access this object",
                 e.getMessage(),
                 HttpStatus.FORBIDDEN,
@@ -64,7 +58,6 @@ public class ErrorHandler {
     @ExceptionHandler(DateException.class)
     public ResponseEntity<ErrorResponse> handleDateException(DateException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-                List.of(Arrays.toString(ex.getStackTrace())),
                 "For the requested operation the conditions are not met.",
                 ex.getMessage(),
                 HttpStatus.FORBIDDEN,
@@ -78,7 +71,6 @@ public class ErrorHandler {
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
         ErrorResponse response = new ErrorResponse(
-                List.of(Arrays.toString(ex.getStackTrace())),
                 "The required object was not found.",
                 ex.getMessage(),
                 HttpStatus.NOT_FOUND,
@@ -100,7 +92,6 @@ public class ErrorHandler {
                 firstError.getRejectedValue());
 
         ErrorResponse response = new ErrorResponse(
-                List.of(Arrays.toString(ex.getStackTrace())),
                 "Incorrectly made request.",
                 message,
                 HttpStatus.BAD_REQUEST,
@@ -115,7 +106,6 @@ public class ErrorHandler {
     @ExceptionHandler(DuplicateException.class)
     public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateException ex) {
         ErrorResponse response = new ErrorResponse(
-                List.of(Arrays.toString(ex.getStackTrace())),
                 "Integrity constraint has been violated.",
                 ex.getMessage(),
                 HttpStatus.CONFLICT,
@@ -136,7 +126,6 @@ public class ErrorHandler {
         );
 
         ErrorResponse response = new ErrorResponse(
-                List.of(Arrays.toString(ex.getStackTrace())),
                 "Incorrectly made request.",
                 message,
                 HttpStatus.BAD_REQUEST,
@@ -151,7 +140,6 @@ public class ErrorHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex) {
         ErrorResponse response = new ErrorResponse(
-                List.of(Arrays.toString(ex.getStackTrace())),
                 "For the requested operation the conditions are not met.",
                 ex.getMessage(),
                 HttpStatus.CONFLICT,
