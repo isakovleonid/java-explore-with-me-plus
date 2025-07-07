@@ -9,7 +9,7 @@ import ru.practicum.events.model.Event;
 
 import java.util.List;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface CompilationMapper {
 
     @Mapping(target = "events", source = "compilation.events")
