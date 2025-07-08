@@ -23,11 +23,11 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     private Category category;
-    @Column
+    @Column(name = "created_on")
     private LocalDateTime createdOn;
     @Column
     private String description;
-    @Column
+    @Column(name = "event_date")
     private LocalDateTime eventDate;
     @ManyToOne
     @JoinColumn(name = "initiator_id", referencedColumnName = "id")
@@ -37,11 +37,11 @@ public class Event {
     private Location location;
     @Column
     private Boolean paid = false;
-    @Column
+    @Column(name = "participant_limit")
     private Integer participantLimit = 0;
-    @Column
+    @Column(name = "published_on")
     private LocalDateTime publishedOn;
-    @Column
+    @Column(name = "request_moderation")
     private Boolean requestModeration = true;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
