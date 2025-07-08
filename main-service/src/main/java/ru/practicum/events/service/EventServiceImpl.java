@@ -16,6 +16,7 @@ import ru.practicum.events.dto.output.SwitchRequestsStatus;
 import ru.practicum.events.mapper.EventMapper;
 import ru.practicum.events.model.Event;
 import ru.practicum.events.model.State;
+import ru.practicum.events.model.StateActionForUser;
 import ru.practicum.events.storage.EventRepository;
 import ru.practicum.exceptions.*;
 import ru.practicum.requests.dto.ParticipationRequestDtoOut;
@@ -119,6 +120,11 @@ public class EventServiceImpl {
         Event newEvent = eventMapper.toEvent(updateEventUserRequest, category, user);
 
         copyFields(event, newEvent);
+        if (updateEventUserRequest.getStateAction() == StateActionForUser.SEND_TO_REVIEW) {
+            event.setState(State.PENDING);
+        } else if (updateEventUserRequest.getStateAction() == StateActionForUser.CANCEL_REVIEW) {
+            event.setState(State.CANCELLED);
+        }
         event = eventRepository.save(event);
         return mapToFullDto(List.of(event)).getFirst();
     }
