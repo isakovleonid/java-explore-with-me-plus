@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @Table(name = "requests")
 public class Request {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     @ManyToOne
     @JoinColumn(name = "event_id", referencedColumnName = "id")
@@ -24,6 +25,7 @@ public class Request {
     @JoinColumn(name = "requester_id", referencedColumnName = "id")
     User requester;
     @Column
+    @Enumerated(EnumType.STRING)
     Status status;
     @Column
     LocalDateTime created;

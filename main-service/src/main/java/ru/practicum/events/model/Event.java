@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @Table(name = "events")
 public class Event {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column
     private String annotation;
@@ -31,19 +32,20 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "initiator_id", referencedColumnName = "id")
     private User initiator;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "location_id", referencedColumnName = "id")
     private Location location;
     @Column
-    private Boolean paid;
+    private Boolean paid = false;
     @Column
-    private Integer participantLimit;
+    private Integer participantLimit = 0;
     @Column
     private LocalDateTime publishedOn;
     @Column
-    private Boolean requestModeration;
-    @Column
-    private State state;
+    private Boolean requestModeration = true;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private State state = State.PENDING;
     @Column
     private String title;
 }
