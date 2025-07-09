@@ -19,7 +19,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/users/{id}/events")
+@RequestMapping("/users/{userId}/events")
 @Slf4j
 public class EventController {
     private final EventServiceImpl eventService;
@@ -28,45 +28,45 @@ public class EventController {
     @ResponseStatus(HttpStatus.OK)
     public SwitchRequestsStatus switchRequestsStatus(@PathVariable Long eventId,
                                                            @RequestBody @Validated EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest,
-                                                           @PathVariable Long id) {
-        return eventService.switchRequestsStatus(eventRequestStatusUpdateRequest, eventId, id);
+                                                           @PathVariable Long userId) {
+        return eventService.switchRequestsStatus(eventRequestStatusUpdateRequest, eventId, userId);
     }
 
     @GetMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
-    public List<ParticipationRequestDtoOut> getRequests(@PathVariable Long eventId, @PathVariable Long id) {
-        log.info("Get requests for event {} and user {}", eventId, id);
-        return eventService.getRequests(id,eventId);
+    public List<ParticipationRequestDtoOut> getRequests(@PathVariable Long eventId, @PathVariable Long userId) {
+        log.info("Get requests for event {} and user {}", eventId, userId);
+        return eventService.getRequests(userId,eventId);
     }
 
     @GetMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
-    public EventFullDto getEvent(@PathVariable Long eventId, @PathVariable Long id) {
-        log.info("Get event {} for user {}", eventId, id);
-        return eventService.getEvent(eventId, id);
+    public EventFullDto getEvent(@PathVariable Long eventId, @PathVariable Long userId) {
+        log.info("Get event {} for user {}", eventId, userId);
+        return eventService.getEvent(eventId, userId);
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<EventShortDto> getUserEvents(@PathVariable Long id,
+    public List<EventShortDto> getUserEvents(@PathVariable Long userId,
                                              @RequestParam(required = false, defaultValue = "0") @Min(0) Integer from,
                                              @RequestParam(required = false, defaultValue = "10")@Min(0) Integer to) {
-        log.info("get events for user with id {}.", id);
-        return eventService.getEventsForUser(id, from, to);
+        log.info("get events for user with userId {}.", userId);
+        return eventService.getEventsForUser(userId, from, to);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public EventFullDto createEvent(@RequestBody @Validated NewEventDto newEventDto, @PathVariable Long id) {
-        log.info("create event for user with id {}.", id);
+    public EventFullDto createEvent(@RequestBody @Validated NewEventDto newEventDto, @PathVariable Long userId) {
+        log.info("create event for user with userId {}.", userId);
         log.info(newEventDto.toString());
-        return eventService.createEvent(newEventDto, id);
+        return eventService.createEvent(newEventDto, userId);
     }
 
     @PatchMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
-    public EventFullDto updateEvent(Long eventId, @RequestBody @Validated UpdateEventUserRequest updateEventUserRequest, @PathVariable Long id) {
-        log.info("update event with id {} for user with id {}.", eventId, id);
-        return eventService.updateEvent(updateEventUserRequest, eventId, id);
+    public EventFullDto updateEvent(@PathVariable Long eventId, @RequestBody @Validated UpdateEventUserRequest updateEventUserRequest, @PathVariable Long userId) {
+        log.info("update event with userId {} for user with userId {}.", eventId, userId);
+        return eventService.updateEvent(updateEventUserRequest, eventId, userId);
     }
 }
