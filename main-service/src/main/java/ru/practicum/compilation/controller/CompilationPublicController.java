@@ -24,7 +24,7 @@ public class CompilationPublicController {
     public List<CompilationDto> getCompilations(
             @RequestParam(required = false) Boolean pinned,
             @RequestParam(defaultValue = "0") @Min(0) Integer from,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
+            @RequestParam(defaultValue = "10") @Min(1) Integer size) {
         log.info("GET /compilations with pinned={}, from={}, size={}", pinned, from, size);
 
         CompilationPublicParam param = new CompilationPublicParam(pinned, from, size);
