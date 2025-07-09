@@ -1,6 +1,6 @@
 package ru.practicum.compilation.dto.in;
 
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.UniqueElements;
@@ -12,7 +12,7 @@ public class NewCompilationDto {
     @UniqueElements
     List<Long> events;
     Boolean pinned = false;
-    @NotEmpty
+    @NotBlank(message = "Field: title. Error: must not be blank. Value: null")
     @Length(min = 1, max = 50)
     String title;
 }

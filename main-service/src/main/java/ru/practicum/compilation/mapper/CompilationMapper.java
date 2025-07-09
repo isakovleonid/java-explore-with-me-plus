@@ -33,7 +33,9 @@ public interface CompilationMapper {
 
     // Добавляем метод для ручной установки списка событий после маппинга UpdateCompilationRequest -> Compilation
     @AfterMapping
-    default void setEventsToEntity(UpdateCompilationRequest updateRequest, @MappingTarget Compilation compilation, @Context List<Event> events) {
+    default void setEventsToEntity(UpdateCompilationRequest updateRequest,
+                                   @MappingTarget Compilation compilation,
+                                   @Context List<Event> events) {
         compilation.setEvents(events);
     }
 }

@@ -3,12 +3,13 @@ package ru.practicum.compilation.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.compilation.dto.in.NewCompilationDto;
 import ru.practicum.compilation.dto.in.UpdateCompilationRequest;
 import ru.practicum.compilation.dto.output.CompilationDto;
-import ru.practicum.compilation.service.CompilationService;
+import ru.practicum.compilation.service.CompilationServiceImpl;
 
 @RestController
 @RequestMapping("admin/compilations")
@@ -17,9 +18,10 @@ import ru.practicum.compilation.service.CompilationService;
 @Validated
 public class CompilationAdminController {
 
-    private final CompilationService compilationService;
+    private final CompilationServiceImpl compilationService;
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public CompilationDto addCompilation(@RequestBody @Valid NewCompilationDto newCompilationDto) {
         log.info("POST /admin/compilations {}", newCompilationDto);
         CompilationDto compilationDto = compilationService.add(newCompilationDto);
@@ -28,6 +30,7 @@ public class CompilationAdminController {
     }
 
     @DeleteMapping("/{compId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCompilation(@PathVariable Long compId) {
         log.info("DELETE /admin/compilations/{}", compId);
         compilationService.delete(compId);

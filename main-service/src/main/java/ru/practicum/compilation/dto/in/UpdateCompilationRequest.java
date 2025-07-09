@@ -12,5 +12,5 @@ public class UpdateCompilationRequest {
     List<Long> events;
     Boolean pinned;
     @Length(min = 1, max = 50)
-    String string;
+    String title;
 }

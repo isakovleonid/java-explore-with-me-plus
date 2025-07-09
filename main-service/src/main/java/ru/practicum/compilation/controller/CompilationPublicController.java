@@ -8,7 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.compilation.dto.output.CompilationDto;
 import ru.practicum.compilation.dto.in.CompilationPublicParam;
-import ru.practicum.compilation.service.CompilationService;
+import ru.practicum.compilation.service.CompilationServiceImpl;
 
 import java.util.List;
 
@@ -18,13 +18,13 @@ import java.util.List;
 @Slf4j
 @Validated
 public class CompilationPublicController {
-    private final CompilationService compilationService;
+    private final CompilationServiceImpl compilationService;
 
     @GetMapping
     public List<CompilationDto> getCompilations(
             @RequestParam(required = false) Boolean pinned,
             @RequestParam(defaultValue = "0") @Min(0) Integer from,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) Integer size) {
+            @RequestParam(defaultValue = "10") @Min(1) Integer size) {
         log.info("GET /compilations with pinned={}, from={}, size={}", pinned, from, size);
 
         CompilationPublicParam param = new CompilationPublicParam(pinned, from, size);
