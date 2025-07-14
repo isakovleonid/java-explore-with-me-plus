@@ -69,6 +69,7 @@ public class EventServiceImpl implements EventService {
                         + event.getState().name());
             }
             event.setState(State.PUBLISHED);
+            event.setPublishedOn(LocalDateTime.now());
         } else if (request.getStateAction().equals(StateActionForAdmin.REJECT_EVENT)) {
             if (event.getState() == State.PUBLISHED) {
                 throw new IncorrectlyMadeRequestException("Cannot publish the event because it's not in the right state: "
@@ -269,13 +270,17 @@ public class EventServiceImpl implements EventService {
 
         List<EventFullDto> eventFullDtos = events.stream()
                 .map(eventMapper::toEventFullDto).toList();
+
         for (EventFullDto eventFullDto : eventFullDtos) {
             eventFullDto.setConfirmedRequests(confirmedRequests.getOrDefault(eventFullDto.getId(), 0L));
+
             eventFullDto.setViews(views.getOrDefault(eventFullDto.getId(), 0L));
+
             if (!eventFullDto.getRequestModeration() || eventFullDto.getParticipantLimit() == 0) {
                 eventFullDto.setConfirmedRequests(eventFullDto.getConfirmedRequests() +
                         rejectedRequests.getOrDefault(eventFullDto.getId(), 0L));
             }
+
         }
 
         return eventFullDtos;

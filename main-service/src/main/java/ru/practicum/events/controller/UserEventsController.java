@@ -1,10 +1,10 @@
 package ru.practicum.events.controller;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.events.dto.in.EventRequestStatusUpdateRequest;
 import ru.practicum.events.dto.in.NewEventDto;
@@ -27,7 +27,7 @@ public class UserEventsController {
     @PatchMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
     public SwitchRequestsStatus switchRequestsStatus(@PathVariable Long eventId,
-                                                     @RequestBody @Validated EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest,
+                                                     @RequestBody @Valid EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest,
                                                      @PathVariable Long userId) {
         return eventService.switchRequestsStatus(eventRequestStatusUpdateRequest, eventId, userId);
     }
@@ -57,7 +57,7 @@ public class UserEventsController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public EventFullDto createEvent(@RequestBody @Validated NewEventDto newEventDto, @PathVariable Long userId) {
+    public EventFullDto createEvent(@RequestBody @Valid NewEventDto newEventDto, @PathVariable Long userId) {
         log.info("create event for user with userId {}.", userId);
         log.info(newEventDto.toString());
         return eventService.createEvent(newEventDto, userId);
@@ -66,7 +66,7 @@ public class UserEventsController {
     @PatchMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
     public EventFullDto updateEvent(@PathVariable Long eventId,
-                                    @RequestBody @Validated UpdateEventUserRequest updateEventUserRequest,
+                                    @RequestBody @Valid UpdateEventUserRequest updateEventUserRequest,
                                     @PathVariable Long userId) {
         log.info("update event with userId {} for user with userId {}.", eventId, userId);
         return eventService.updateEvent(updateEventUserRequest, eventId, userId);
