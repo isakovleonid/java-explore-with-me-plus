@@ -4,6 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import ru.practicum.category.model.Category;
 import ru.practicum.events.dto.in.NewEventDto;
+import ru.practicum.events.dto.in.UpdateEventAdminRequest;
 import ru.practicum.events.dto.in.UpdateEventUserRequest;
 import ru.practicum.events.dto.output.EventFullDto;
 import ru.practicum.events.dto.output.EventShortDto;
@@ -28,4 +29,9 @@ public interface EventMapper {
     @Mapping(target = "initiator", source = "user")
     @Mapping(target = "id", ignore = true)
     Event toEvent(UpdateEventUserRequest updateEventUserRequest, Category category, User user);
+
+    @Mapping(target = "category", source = "category")
+    @Mapping(target = "initiator", source = "user")
+    @Mapping(target = "id", ignore = true)
+    Event toEvent(UpdateEventAdminRequest updateEventAdminRequest, Category category, User user);
 }
