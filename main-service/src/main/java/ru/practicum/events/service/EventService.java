@@ -7,21 +7,22 @@ import ru.practicum.events.dto.in.UpdateEventUserRequest;
 import ru.practicum.events.dto.output.EventFullDto;
 import ru.practicum.events.dto.output.EventShortDto;
 import ru.practicum.events.dto.output.SwitchRequestsStatus;
-import ru.practicum.events.model.EventParam;
+import ru.practicum.events.model.EventAdminParam;
+import ru.practicum.events.model.EventPublicParam;
 import ru.practicum.requests.dto.ParticipationRequestDtoOut;
 
 import java.util.List;
 
 public interface EventService {
+
     EventFullDto updateEvent(UpdateEventAdminRequest request, Long eventId);
 
+    List<EventFullDto> findEvents(EventAdminParam param);
     EventFullDto getEvent(Long eventId);
 
-    List<EventFullDto> findEvents(EventParam param);
+    List<EventShortDto> findEvents(EventPublicParam param);
 
-    SwitchRequestsStatus switchRequestsStatus(EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest,
-                                              Long eventId,
-                                              Long userId);
+    SwitchRequestsStatus switchRequestsStatus(EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest, Long eventId, Long userId);
 
     List<ParticipationRequestDtoOut> getRequests(Long userId, Long eventId);
 

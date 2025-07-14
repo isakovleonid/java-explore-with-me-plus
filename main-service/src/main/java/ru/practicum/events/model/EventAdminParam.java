@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class EventParam {
+public class EventAdminParam {
     List<Long> users;
     List<State> states;
     List<Long> categories;
