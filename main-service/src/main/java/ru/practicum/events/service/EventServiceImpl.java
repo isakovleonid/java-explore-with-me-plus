@@ -86,7 +86,7 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
 
         if (event.getState() != State.PUBLISHED) {
-            throw new BadRequestException("Event with id " + eventId + " has not been published");
+            throw new NotFoundException("Event with id " + eventId + " has not been published");
         }
 
         return mapToFullDto(List.of(event)).getFirst();
