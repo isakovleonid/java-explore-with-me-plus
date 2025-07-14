@@ -149,4 +149,17 @@ public class ErrorHandler {
         log.error("Category is not empty: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex) {
+        ErrorResponse response = new ErrorResponse(
+                "Incorrectly made request.",
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST,
+                LocalDateTime.now().format(FORMATTER)
+        );
+        log.error("BadRequest exception: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 }

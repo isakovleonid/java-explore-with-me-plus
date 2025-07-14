@@ -8,7 +8,7 @@ import ru.practicum.events.dto.in.UpdateEventAdminRequest;
 import ru.practicum.events.dto.output.EventFullDto;
 import ru.practicum.events.model.EventParam;
 import ru.practicum.events.model.State;
-import ru.practicum.events.service.EventServiceImpl;
+import ru.practicum.events.service.EventService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/admin/events")
 public class AdminEventsController {
-    private final EventServiceImpl eventService;
+    private final EventService eventService;
 
     @GetMapping
     public List<EventFullDto> findEvents(@RequestParam(required = false) List<Long> users,
