@@ -27,6 +27,7 @@ import ru.practicum.users.model.User;
 import ru.practicum.users.storage.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,7 +37,8 @@ import static ru.practicum.constants.Methods.copyFields;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class EventServiceImpl {
+public class EventServiceImpl implements EventService {
+
     private final EventMapper eventMapper;
     private final StatClientService statClientService;
     private final UserRepository userRepository;
@@ -80,13 +82,37 @@ public class EventServiceImpl {
     }
 
     @Transactional(readOnly = true)
-    public List<EventFullDto> findEvents(EventParam param) {
+    public List<EventFullDto> findEvents(EventAdminParam param) {
         if (param.getFrom() > param.getSize()) {
             throw new IncorrectlyMadeRequestException("Incorrectly size requested");
         }
         PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
         List<Event> events = eventRepository.findEventsByParam(param, pageRequest);
         return mapToFullDto(events);
+    }
+
+    @Transactional(readOnly = true)
+    public List<EventShortDto> findEvents(EventPublicParam param) {
+        if (param.getFrom() > param.getSize()) {
+            throw new IncorrectlyMadeRequestException("Incorrectly size requested");
+        }
+        PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
+        List<Event> events = eventRepository.findEventsByParam(param, pageRequest);
+        List<EventShortDto> eventShortDtos = mapToShortDto(events);
+
+        if (param.getSort() != null) {
+            switch (param.getSort()) {
+                case "EVENT_DATE":
+                    eventShortDtos.sort(Comparator.comparing(EventShortDto::getEventDate));
+                    break;
+                case "VIEWS":
+                    eventShortDtos.sort(Comparator.comparing(EventShortDto::getViews).reversed());
+                    break;
+                default:
+                    break;
+            }
+        }
+        return eventShortDtos;
     }
 
     @Transactional
@@ -257,6 +283,24 @@ public class EventServiceImpl {
         }
 
         return eventFullDtos;
+    }
+
+    private List<EventShortDto> mapToShortDto(List<Event> events) {
+        List<Long> ids = events.stream()
+                .map(Event::getId)
+                .toList();
+        Map<Long, Long> confirmedRequests = getRequests(ids, Status.CONFIRMED);
+        Map<Long, Long> rejectedRequests = getRequests(ids, Status.REJECTED);
+        Map<Long, Long> views = statClientService.getEventsView(events);
+
+        List<EventShortDto> eventShortDtos = events.stream()
+                .map(eventMapper::toEventShortDto).toList();
+        for (EventShortDto eventShortDto : eventShortDtos) {
+            eventShortDto.setConfirmedRequests(confirmedRequests.getOrDefault(eventShortDto.getId(), 0L));
+            eventShortDto.setViews(views.getOrDefault(eventShortDto.getId(), 0L));
+        }
+
+        return eventShortDtos;
     }
 
     private Map<Long, Long> getRequests(List<Long> events, Status status) {

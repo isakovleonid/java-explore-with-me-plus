@@ -6,7 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.events.dto.in.UpdateEventAdminRequest;
 import ru.practicum.events.dto.output.EventFullDto;
-import ru.practicum.events.model.EventParam;
+import ru.practicum.events.model.EventAdminParam;
 import ru.practicum.events.model.State;
 import ru.practicum.events.service.EventServiceImpl;
 
@@ -27,7 +27,7 @@ public class AdminEventsController {
                                          @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end,
                                          @RequestParam(value = "from", defaultValue = "0") @Min(0) Integer from,
                                          @RequestParam(value = "size", defaultValue = "10") @Min(0) Integer size) {
-        EventParam param = new EventParam();
+        EventAdminParam param = new EventAdminParam();
         param.setUsers(users);
         param.setStates(states);
         param.setCategories(categories);
