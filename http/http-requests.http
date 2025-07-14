@@ -144,3 +144,16 @@ Content-Type: application/json
   "title": "{{$random.lorem.sentence}}"
 }
 
+### 23. Получение событий администратором
+GET {{main-service-url}}/admin/events?users=1&states=CANCELLED&categories=1&start=2040-07-08%2016:50:00&end=2050-07-08%2016:50:00
+
+### 24. Редактирование события администратором
+PATCH {{main-service-url}}/admin/events/1
+Content-Type: application/json
+
+{
+  "annotation": "annotation edit ..................................................",
+  "category": 1,
+  "description": "description edit ......................................................",
+  "stateAction": "PUBLISH_EVENT"
+}

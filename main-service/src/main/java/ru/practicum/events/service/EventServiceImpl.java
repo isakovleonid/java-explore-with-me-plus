@@ -9,14 +9,13 @@ import ru.practicum.category.model.Category;
 import ru.practicum.category.storage.CategoryRepository;
 import ru.practicum.events.dto.in.EventRequestStatusUpdateRequest;
 import ru.practicum.events.dto.in.NewEventDto;
+import ru.practicum.events.dto.in.UpdateEventAdminRequest;
 import ru.practicum.events.dto.in.UpdateEventUserRequest;
 import ru.practicum.events.dto.output.EventFullDto;
 import ru.practicum.events.dto.output.EventShortDto;
 import ru.practicum.events.dto.output.SwitchRequestsStatus;
 import ru.practicum.events.mapper.EventMapper;
-import ru.practicum.events.model.Event;
-import ru.practicum.events.model.State;
-import ru.practicum.events.model.StateActionForUser;
+import ru.practicum.events.model.*;
 import ru.practicum.events.storage.EventRepository;
 import ru.practicum.exceptions.*;
 import ru.practicum.requests.dto.ParticipationRequestDtoOut;
@@ -46,6 +45,51 @@ public class EventServiceImpl {
     private final EventRepository eventRepository;
     private final RequestMapper requestMapper;
 
+    @Transactional
+    public EventFullDto updateEvent(UpdateEventAdminRequest request, Long eventId) {
+        Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
+        Category category;
+        if (request.getCategory() == null) {
+            category = event.getCategory();
+        } else {
+            category = categoryRepository.findById(request.getCategory()).orElseThrow(() -> new NotFoundException("Category not found"));
+        }
+        Event newEvent = eventMapper.toEvent(request, category, event.getInitiator());
+        copyFields(event, newEvent);
+
+        if (request.getStateAction() == null) {
+            return eventMapper.toEventFullDto(eventRepository.save(event));
+        } else if (request.getStateAction().equals(StateActionForAdmin.PUBLISH_EVENT)) {
+            if (LocalDateTime.now().isAfter(event.getEventDate().minusHours(1).minusSeconds(5))) {
+                throw new DateException("Date must be before one hour before the event start");
+            }
+            if (event.getState() != State.PENDING) {
+                throw new IncorrectlyMadeRequestException("Cannot publish the event because it's not in the right state: "
+                        + event.getState().name());
+            }
+            event.setState(State.PUBLISHED);
+        } else if (request.getStateAction().equals(StateActionForAdmin.REJECT_EVENT)) {
+            if (event.getState() == State.PUBLISHED) {
+                throw new IncorrectlyMadeRequestException("Cannot publish the event because it's not in the right state: "
+                        + event.getState().name());
+            }
+            event.setState(State.CANCELLED);
+        }
+
+        return eventMapper.toEventFullDto(eventRepository.save(event));
+    }
+
+    @Transactional(readOnly = true)
+    public List<EventFullDto> findEvents(EventParam param) {
+        if (param.getFrom() > param.getSize()) {
+            throw new IncorrectlyMadeRequestException("Incorrectly size requested");
+        }
+        PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
+        List<Event> events = eventRepository.findEventsByParam(param, pageRequest);
+        return mapToFullDto(events);
+    }
+
+    @Transactional
     public SwitchRequestsStatus switchRequestsStatus(EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest, Long eventId, Long userId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " " + "not found"));
@@ -86,7 +130,6 @@ public class EventServiceImpl {
         requestRepository.setStatusForAllByIdIn(confirmedIds, Status.REJECTED);
 
         return new SwitchRequestsStatus(confirmed, rejected);
-
     }
 
     public List<ParticipationRequestDtoOut> getRequests(Long userId, Long eventId) {
@@ -111,7 +154,7 @@ public class EventServiceImpl {
         if (event.getState() == State.PUBLISHED) {
             throw new OperationNotAllowedException("Only pending or canceled events can be changed");
         }
-        dateValidation(updateEventUserRequest.getEventDate());
+        dateValidation(updateEventUserRequest.getEventDate(), 2);
 
         Category category = categoryRepository.findById(updateEventUserRequest.getCategory())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
@@ -141,7 +184,7 @@ public class EventServiceImpl {
 
     @Transactional
     public EventFullDto createEvent(NewEventDto newEventDto, Long userId) {
-        dateValidation(newEventDto.getEventDate());
+        dateValidation(newEventDto.getEventDate(), 2);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("user with id " + userId + " not found"));
@@ -159,7 +202,7 @@ public class EventServiceImpl {
         if (to < from) {
             throw new IncorrectlyMadeRequestException("to must be greater than from");
         }
-        PageRequest pageRequest = PageRequest.of(from / (to - from), to - from);
+        PageRequest pageRequest = PageRequest.of(from / to, to);
 
         List<Event> events = eventRepository.findAllByInitiatorId(userId, pageRequest);
         Map<Long, Long> views = Map.of();
@@ -188,9 +231,9 @@ public class EventServiceImpl {
         return shortDtos;
     }
 
-    private void dateValidation(LocalDateTime date) {
-        if (!date.isAfter(LocalDateTime.now().plusHours(2).minusSeconds(5))) {
-            throw new DateException("The date must be 2 hours after now. Value: " + date);
+    private void dateValidation(LocalDateTime date, int hours) {
+        if (!date.isAfter(LocalDateTime.now().plusHours(hours).minusSeconds(5))) {
+            throw new DateException("The date must be " + hours + " hours after now. Value: " + date);
         }
     }
 
