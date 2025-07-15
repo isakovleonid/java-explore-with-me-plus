@@ -76,7 +76,7 @@ public class EventServiceImpl implements EventService {
                 throw new IncorrectlyMadeRequestException("Cannot publish the event because it's not in the right state: "
                         + event.getState().name());
             }
-            event.setState(State.CANCELLED);
+            event.setState(State.CANCELED);
         }
 
         return eventMapper.toEventFullDto(eventRepository.save(event));
@@ -145,32 +145,42 @@ public class EventServiceImpl implements EventService {
         }
 
         EventFullDto eventFullDto = mapToFullDto(List.of(event)).getFirst();
-        long freeLimit = eventFullDto.getParticipantLimit() - eventFullDto.getConfirmedRequests();
-        if (freeLimit <= 0) {
-            throw new ConflictException("The participant limit has been reached");
+
+
+        if (eventRequestStatusUpdateRequest.getStatus() == Status.CONFIRMED) {
+            int freeLimit = (int) Math.min(eventFullDto.getParticipantLimit() - eventFullDto.getConfirmedRequests(), eventRequestStatusUpdateRequest.getRequestIds().size());
+            if (freeLimit <= 0) {
+                throw new ConflictException("The participant limit has been reached");
+            }
+            List<Long> confirmedIds = eventRequestStatusUpdateRequest.getRequestIds().subList(0,
+                    freeLimit);
+            List<Long> rejectedIds = eventRequestStatusUpdateRequest.getRequestIds().subList(freeLimit,
+                    eventRequestStatusUpdateRequest.getRequestIds().size());
+
+            requestRepository.setStatusForAllByIdIn(rejectedIds, Status.REJECTED);
+            requestRepository.setStatusForAllByIdIn(confirmedIds, Status.CONFIRMED);
+
+            List<Request> requests = requestRepository.findAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds());
+
+            List<ParticipationRequestDtoOut> rejected = requests.stream()
+                    .filter(obj -> rejectedIds.contains(obj.getId()))
+                    .map(requestMapper::toParticipationRequestDtoOut)
+                    .toList();
+
+            List<ParticipationRequestDtoOut> confirmed = requests.stream()
+                    .filter(obj -> confirmedIds.contains(obj.getId()))
+                    .map(requestMapper::toParticipationRequestDtoOut)
+                    .toList();
+
+            return new SwitchRequestsStatus(confirmed, rejected);
+        } else {
+            requestRepository.setStatusForAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds(), Status.REJECTED);
+            List<ParticipationRequestDtoOut> rejected = requestRepository.findAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds())
+                    .stream()
+                    .map(requestMapper::toParticipationRequestDtoOut)
+                    .toList();
+            return new SwitchRequestsStatus(List.of(), rejected);
         }
-
-        List<Long> confirmedIds = eventRequestStatusUpdateRequest.getRequestIds().subList(0, (int) freeLimit);
-        List<Long> requestIds = eventRequestStatusUpdateRequest.getRequestIds().subList((int) freeLimit,
-                eventRequestStatusUpdateRequest.getRequestIds().size());
-
-        List<Request> requests = requestRepository.findAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds());
-
-        List<ParticipationRequestDtoOut> confirmed = requests.stream()
-                .filter(obj -> confirmedIds.contains(obj.getId()))
-                .map(requestMapper::toParticipationRequestDtoOut)
-                .toList();
-
-        requestRepository.setStatusForAllByIdIn(confirmedIds, Status.CONFIRMED);
-
-        List<ParticipationRequestDtoOut> rejected = requests.stream()
-                .filter(obj -> requestIds.contains(obj.getId()))
-                .map(requestMapper::toParticipationRequestDtoOut)
-                .toList();
-
-        requestRepository.setStatusForAllByIdIn(confirmedIds, Status.REJECTED);
-
-        return new SwitchRequestsStatus(confirmed, rejected);
     }
 
     @Override
@@ -197,10 +207,16 @@ public class EventServiceImpl implements EventService {
         if (event.getState() == State.PUBLISHED) {
             throw new OperationNotAllowedException("Only pending or canceled events can be changed");
         }
-        dateValidation(updateEventUserRequest.getEventDate(), 2);
-
-        Category category = categoryRepository.findById(updateEventUserRequest.getCategory())
-                .orElseThrow(() -> new NotFoundException("Category not found"));
+        if (updateEventUserRequest.getEventDate() != null) {
+            dateValidation(updateEventUserRequest.getEventDate(), 2);
+        }
+        Category category;
+        if (updateEventUserRequest.getCategory() != null) {
+            category = categoryRepository.findById(updateEventUserRequest.getCategory())
+                    .orElseThrow(() -> new NotFoundException("Category not found"));
+        } else {
+            category = event.getCategory();
+        }
 
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         Event newEvent = eventMapper.toEvent(updateEventUserRequest, category, user);
@@ -209,7 +225,7 @@ public class EventServiceImpl implements EventService {
         if (updateEventUserRequest.getStateAction() == StateActionForUser.SEND_TO_REVIEW) {
             event.setState(State.PENDING);
         } else if (updateEventUserRequest.getStateAction() == StateActionForUser.CANCEL_REVIEW) {
-            event.setState(State.CANCELLED);
+            event.setState(State.CANCELED);
         }
         event = eventRepository.save(event);
         return mapToFullDto(List.of(event)).getFirst();

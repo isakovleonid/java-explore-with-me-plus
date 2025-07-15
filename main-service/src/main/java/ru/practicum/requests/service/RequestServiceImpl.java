@@ -88,7 +88,7 @@ public class RequestServiceImpl implements RequestService {
                     "User with id=%d cannot cancel non-his request with id=%d", userId, requestId));
         }
 
-        request.setStatus(Status.REJECTED);
+        request.setStatus(Status.CANCELED);
         Request updatedRequest = requestRepository.save(request);
 
         log.info("Request with id: {} cancelled successfully", requestId);
