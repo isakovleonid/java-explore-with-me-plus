@@ -161,33 +161,52 @@ public class EventServiceImpl implements EventService {
             if (freeLimit <= 0) {
                 throw new ConflictException("The participant limit has been reached");
             }
+
             List<Long> confirmedIds = eventRequestStatusUpdateRequest.getRequestIds().subList(0,
                     freeLimit);
             List<Long> rejectedIds = eventRequestStatusUpdateRequest.getRequestIds().subList(freeLimit,
                     eventRequestStatusUpdateRequest.getRequestIds().size());
 
-            requestRepository.setStatusForAllByIdIn(rejectedIds, Status.REJECTED);
-            requestRepository.setStatusForAllByIdIn(confirmedIds, Status.CONFIRMED);
-
             List<Request> requests = requestRepository.findAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds());
 
             List<ParticipationRequestDtoOut> rejected = requests.stream()
                     .filter(obj -> rejectedIds.contains(obj.getId()))
+                    .peek(obj -> {
+                        if (obj.getStatus() == Status.CONFIRMED) {
+                            throw new ConflictException("Request with id " + obj.getId() + " has been confirmed. It cannot be rejected ");
+                        }
+                    })
                     .map(requestMapper::toParticipationRequestDtoOut)
+                    .peek(obj -> obj.setStatus(Status.REJECTED))
                     .toList();
 
             List<ParticipationRequestDtoOut> confirmed = requests.stream()
                     .filter(obj -> confirmedIds.contains(obj.getId()))
+                    .peek(obj -> {
+                        if (obj.getStatus() == Status.REJECTED) {
+                            throw new ConflictException("Request with id " + obj.getId() + " has been confirmed. It cannot be rejected ");
+                        }
+                    })
                     .map(requestMapper::toParticipationRequestDtoOut)
+                    .peek(obj -> obj.setStatus(Status.CONFIRMED))
                     .toList();
+
+            requestRepository.setStatusForAllByIdIn(rejectedIds, Status.REJECTED);
+            requestRepository.setStatusForAllByIdIn(confirmedIds, Status.CONFIRMED);
 
             return new SwitchRequestsStatus(confirmed, rejected);
         } else {
-            requestRepository.setStatusForAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds(), Status.REJECTED);
             List<ParticipationRequestDtoOut> rejected = requestRepository.findAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds())
                     .stream()
+                    .peek(obj -> {
+                        if (obj.getStatus() == Status.CONFIRMED) {
+                            throw new ConflictException("Request with id " + obj.getId() + " has been confirmed. It cannot be rejected ");
+                        }
+                    })
                     .map(requestMapper::toParticipationRequestDtoOut)
+                    .peek(obj -> obj.setStatus(Status.REJECTED))
                     .toList();
+            requestRepository.setStatusForAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds(), Status.REJECTED);
             return new SwitchRequestsStatus(List.of(), rejected);
         }
     }

@@ -117,6 +117,7 @@ public class RequestServiceImpl implements RequestService {
             log.warn("Participant limit reached for event with id={}", event.getId());
             throw new ConflictException(String.format("Participant limit reached for event with id=%d", event.getId()));
         }
+
     }
 
     private User findUserById(Long userId) {
