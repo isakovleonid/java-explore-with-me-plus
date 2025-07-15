@@ -191,7 +191,7 @@ public class EventServiceImpl implements EventService {
             throw new NoHavePermissionException("You do not have permission to update this event");
         }
 
-        List<Request> requests = requestRepository.findAllByEventIdAndRequesterId(eventId, userId);
+        List<Request> requests = requestRepository.findAllByEventId(eventId);
 
         return requests.stream()
                 .map(requestMapper::toParticipationRequestDtoOut)
