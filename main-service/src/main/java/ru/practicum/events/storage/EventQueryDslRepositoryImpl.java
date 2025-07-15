@@ -6,11 +6,9 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-import ru.practicum.events.model.Event;
-import ru.practicum.events.model.EventAdminParam;
-import ru.practicum.events.model.EventPublicParam;
-import ru.practicum.events.model.QEvent;
+import ru.practicum.events.model.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -56,6 +54,8 @@ public class EventQueryDslRepositoryImpl implements EventQueryDslRepository {
 
         BooleanBuilder predicate = new BooleanBuilder();
 
+        predicate.and(QEvent.event.state.eq(State.PUBLISHED));
+
         if (param.getText() != null && !param.getText().isEmpty()) {
             BooleanBuilder textConditions = new BooleanBuilder();
             textConditions.or(QEvent.event.annotation.containsIgnoreCase(param.getText()));
@@ -73,6 +73,11 @@ public class EventQueryDslRepositoryImpl implements EventQueryDslRepository {
 
         if (param.getRangeEnd() != null) {
             predicate.and(QEvent.event.eventDate.loe(param.getRangeEnd()));
+        }
+
+        if (param.getRangeStart() == null && param.getRangeEnd() == null) {
+            predicate.and(QEvent.event.eventDate.goe(LocalDateTime.now()));
+
         }
 
         if (param.getOnlyAvailable() != null && param.getOnlyAvailable()) {
