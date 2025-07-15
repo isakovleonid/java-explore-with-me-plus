@@ -31,6 +31,7 @@ import java.util.Set;
 @Validated
 @Slf4j
 public class PublicEventsController {
+
     private final StatClient statClient;
     private final EventService eventService;
 
