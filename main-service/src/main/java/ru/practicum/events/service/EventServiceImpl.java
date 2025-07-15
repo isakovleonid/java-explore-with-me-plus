@@ -27,6 +27,7 @@ import ru.practicum.users.model.User;
 import ru.practicum.users.storage.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -106,27 +107,35 @@ public class EventServiceImpl implements EventService {
     }
 
     @Transactional(readOnly = true)
+    @Override
     public List<EventShortDto> findEvents(EventPublicParam param) {
         if (param.getFrom() > param.getSize()) {
             throw new IncorrectlyMadeRequestException("Incorrectly size requested");
         }
+
+        if (param.getRangeStart() != null && param.getRangeEnd() != null
+                && param.getRangeStart().isAfter(param.getRangeEnd())) {
+            throw new IllegalArgumentException("DateStart cannot be later than the dateEnd");
+        }
+
         PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
         List<Event> events = eventRepository.findEventsByParam(param, pageRequest);
         List<EventShortDto> eventShortDtos = mapToShortDto(events);
+        List<EventShortDto> mutableEvents = new ArrayList<>(eventShortDtos);
 
         if (param.getSort() != null) {
             switch (param.getSort()) {
                 case "EVENT_DATE":
-                    eventShortDtos.sort(Comparator.comparing(EventShortDto::getEventDate));
+                    mutableEvents.sort(Comparator.comparing(EventShortDto::getEventDate));
                     break;
                 case "VIEWS":
-                    eventShortDtos.sort(Comparator.comparing(EventShortDto::getViews).reversed());
+                    mutableEvents.sort(Comparator.comparing(EventShortDto::getViews).reversed());
                     break;
                 default:
                     break;
             }
         }
-        return eventShortDtos;
+        return mutableEvents;
     }
 
     @Transactional
