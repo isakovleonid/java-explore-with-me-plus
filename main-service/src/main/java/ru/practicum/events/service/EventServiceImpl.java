@@ -66,14 +66,14 @@ public class EventServiceImpl implements EventService {
                 throw new DateException("Date must be before one hour before the event start");
             }
             if (event.getState() != State.PENDING) {
-                throw new IncorrectlyMadeRequestException("Cannot publish the event because it's not in the right state: "
+                throw new ConflictException("Cannot publish the event because it's not in the right state: "
                         + event.getState().name());
             }
             event.setState(State.PUBLISHED);
             event.setPublishedOn(LocalDateTime.now());
         } else if (request.getStateAction().equals(StateActionForAdmin.REJECT_EVENT)) {
             if (event.getState() == State.PUBLISHED) {
-                throw new IncorrectlyMadeRequestException("Cannot publish the event because it's not in the right state: "
+                throw new ConflictException("Cannot publish the event because it's not in the right state: "
                         + event.getState().name());
             }
             event.setState(State.CANCELED);
@@ -205,7 +205,7 @@ public class EventServiceImpl implements EventService {
             throw new NoHavePermissionException("You do not have permission to update this event");
         }
         if (event.getState() == State.PUBLISHED) {
-            throw new OperationNotAllowedException("Only pending or canceled events can be changed");
+            throw new ConflictException("Only pending or canceled events can be changed");
         }
         if (updateEventUserRequest.getEventDate() != null) {
             dateValidation(updateEventUserRequest.getEventDate(), 2);
@@ -254,6 +254,9 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("category with id " + newEventDto.getCategory() + " not found"));
 
         Event event = eventMapper.toEvent(newEventDto, category, user);
+        if (event.getState() == null) {
+            event.setState(State.PENDING);
+        }
         event = eventRepository.save(event);
         return mapToFullDto(List.of(event)).getFirst();
     }
