@@ -9,16 +9,11 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.client.StatClient;
 import ru.practicum.dto.in.StatisticDto;
+import ru.practicum.events.dto.output.EventFullDto;
 import ru.practicum.events.dto.output.EventShortDto;
 import ru.practicum.events.model.EventPublicParam;
-import ru.practicum.events.service.EventServiceImpl;
-import ru.practicum.events.dto.output.EventFullDto;
 import ru.practicum.events.service.EventService;
 
 import java.time.LocalDateTime;
