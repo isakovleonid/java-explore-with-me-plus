@@ -113,7 +113,7 @@ public class RequestServiceImpl implements RequestService {
         }
 
         if (event.getParticipantLimit() > 0 &&
-                requestRepository.countByEventId(event.getId()) >= event.getParticipantLimit()) {
+                requestRepository.countByEventIdAndStatus(event.getId(), Status.CONFIRMED) >= event.getParticipantLimit()) {
             log.warn("Participant limit reached for event with id={}", event.getId());
             throw new ConflictException(String.format("Participant limit reached for event with id=%d", event.getId()));
         }
