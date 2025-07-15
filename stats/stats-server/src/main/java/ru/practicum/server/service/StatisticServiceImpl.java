@@ -35,6 +35,9 @@ public class StatisticServiceImpl implements StatisticService {
 
         LocalDateTime dtStart = LocalDateTime.parse(start, formatter);
         LocalDateTime dtEnd = LocalDateTime.parse(end, formatter);
+        if (dtStart.isAfter(dtEnd)) {
+            throw new IllegalArgumentException("Start date cannot be after end date");
+        }
 
         if (uris.isEmpty()) {
 
