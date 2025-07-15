@@ -26,7 +26,6 @@ import java.util.Set;
 @Slf4j
 public class PublicEventsController {
 
-//    private final EventPublicServiceImpl eventService;
     private final EventServiceImpl eventService;
     private final StatClient statClient;
 
@@ -61,10 +60,4 @@ public class PublicEventsController {
 
         return eventShorts;
     }
-
-//    @GetMapping("/{id}")
-//    @ResponseStatus(HttpStatus.OK)
-//    public EventFullDto getPublicEventById(@PathVariable Long id, HttpServletRequest request) {
-//        return eventService.getPublicEventById(id, request);
-//    }
 }
