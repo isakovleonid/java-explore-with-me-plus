@@ -98,6 +98,7 @@ public class CompilationServiceImpl implements CompilationService {
         Compilation findedCompilation = findCompById(compId);
 
         boolean pinned = findedCompilation.getPinned();
+        String title = findedCompilation.getTitle();
 
         List<Event> events = new ArrayList<>();
         if (updateCompilationRequest.getEvents() != null) {
@@ -109,7 +110,9 @@ public class CompilationServiceImpl implements CompilationService {
         if (updateCompilationRequest.getPinned() == null) {
             compilationToUpdate.setPinned(pinned);
         }
-
+        if (updateCompilationRequest.getTitle() == null) {
+            compilationToUpdate.setTitle(title);
+        }
         Compilation updatedCompilation = compilationRepository.save(compilationToUpdate);
 
         log.info("Compilation with id: {} was updated", updatedCompilation.getId());
