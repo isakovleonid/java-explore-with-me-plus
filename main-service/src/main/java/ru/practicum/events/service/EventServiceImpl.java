@@ -197,10 +197,16 @@ public class EventServiceImpl implements EventService {
         if (event.getState() == State.PUBLISHED) {
             throw new OperationNotAllowedException("Only pending or canceled events can be changed");
         }
-        dateValidation(updateEventUserRequest.getEventDate(), 2);
 
-        Category category = categoryRepository.findById(updateEventUserRequest.getCategory())
-                .orElseThrow(() -> new NotFoundException("Category not found"));
+        if (updateEventUserRequest.getEventDate() != null) {
+            dateValidation(updateEventUserRequest.getEventDate(), 2);
+        }
+
+        Category category = null;
+        if (updateEventUserRequest.getCategory() != null) {
+            category = categoryRepository.findById(updateEventUserRequest.getCategory())
+                    .orElseThrow(() -> new NotFoundException("Category not found"));
+        }
 
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         Event newEvent = eventMapper.toEvent(updateEventUserRequest, category, user);
@@ -279,6 +285,7 @@ public class EventServiceImpl implements EventService {
 
     private void dateValidation(LocalDateTime date, int hours) {
         if (!date.isAfter(LocalDateTime.now().plusHours(hours).minusSeconds(5))) {
+//        if (date != null && !date.isAfter(LocalDateTime.now().plusHours(hours).minusSeconds(5))) {
             throw new DateException("The date must be " + hours + " hours after now. Value: " + date);
         }
     }
