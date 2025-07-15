@@ -36,7 +36,7 @@ import static ru.practicum.constants.Methods.copyFields;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class EventServiceImpl {
+public class EventServiceImpl implements EventService {
     private final EventMapper eventMapper;
     private final StatClientService statClientService;
     private final UserRepository userRepository;
@@ -46,6 +46,7 @@ public class EventServiceImpl {
     private final RequestMapper requestMapper;
 
     @Transactional
+    @Override
     public EventFullDto updateEvent(UpdateEventAdminRequest request, Long eventId) {
         Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
         Category category;
@@ -68,6 +69,7 @@ public class EventServiceImpl {
                         + event.getState().name());
             }
             event.setState(State.PUBLISHED);
+            event.setPublishedOn(LocalDateTime.now());
         } else if (request.getStateAction().equals(StateActionForAdmin.REJECT_EVENT)) {
             if (event.getState() == State.PUBLISHED) {
                 throw new IncorrectlyMadeRequestException("Cannot publish the event because it's not in the right state: "
@@ -79,7 +81,20 @@ public class EventServiceImpl {
         return eventMapper.toEventFullDto(eventRepository.save(event));
     }
 
+    @Override
+    public EventFullDto getEvent(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
+
+        if (event.getState() != State.PUBLISHED) {
+            throw new NotFoundException("Event with id " + eventId + " has not been published");
+        }
+
+        return mapToFullDto(List.of(event)).getFirst();
+    }
+
     @Transactional(readOnly = true)
+    @Override
     public List<EventFullDto> findEvents(EventParam param) {
         if (param.getFrom() > param.getSize()) {
             throw new IncorrectlyMadeRequestException("Incorrectly size requested");
@@ -90,7 +105,10 @@ public class EventServiceImpl {
     }
 
     @Transactional
-    public SwitchRequestsStatus switchRequestsStatus(EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest, Long eventId, Long userId) {
+    @Override
+    public SwitchRequestsStatus switchRequestsStatus(EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest,
+                                                     Long eventId,
+                                                     Long userId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " " + "not found"));
         if (!event.getInitiator().getId().equals(userId)) {
@@ -132,6 +150,7 @@ public class EventServiceImpl {
         return new SwitchRequestsStatus(confirmed, rejected);
     }
 
+    @Override
     public List<ParticipationRequestDtoOut> getRequests(Long userId, Long eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " " + "not found"));
@@ -146,6 +165,7 @@ public class EventServiceImpl {
                 .toList();
     }
 
+    @Override
     public EventFullDto updateEvent(UpdateEventUserRequest updateEventUserRequest, Long eventId, Long userId) {
         Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event not found"));
         if (!event.getInitiator().getId().equals(userId)) {
@@ -172,6 +192,7 @@ public class EventServiceImpl {
         return mapToFullDto(List.of(event)).getFirst();
     }
 
+    @Override
     public EventFullDto getEvent(Long eventId, Long userId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " not found"));
@@ -183,6 +204,7 @@ public class EventServiceImpl {
     }
 
     @Transactional
+    @Override
     public EventFullDto createEvent(NewEventDto newEventDto, Long userId) {
         dateValidation(newEventDto.getEventDate(), 2);
 
@@ -198,6 +220,7 @@ public class EventServiceImpl {
     }
 
     @Transactional(readOnly = true)
+    @Override
     public List<EventShortDto> getEventsForUser(Long userId, Integer from, Integer to) {
         if (to < from) {
             throw new IncorrectlyMadeRequestException("to must be greater than from");
@@ -247,13 +270,17 @@ public class EventServiceImpl {
 
         List<EventFullDto> eventFullDtos = events.stream()
                 .map(eventMapper::toEventFullDto).toList();
+
         for (EventFullDto eventFullDto : eventFullDtos) {
             eventFullDto.setConfirmedRequests(confirmedRequests.getOrDefault(eventFullDto.getId(), 0L));
+
             eventFullDto.setViews(views.getOrDefault(eventFullDto.getId(), 0L));
+
             if (!eventFullDto.getRequestModeration() || eventFullDto.getParticipantLimit() == 0) {
                 eventFullDto.setConfirmedRequests(eventFullDto.getConfirmedRequests() +
                         rejectedRequests.getOrDefault(eventFullDto.getId(), 0L));
             }
+
         }
 
         return eventFullDtos;
