@@ -10,5 +10,9 @@ import java.util.List;
 public interface EventQueryDslRepository {
     List<Event> findEventsByParam(EventAdminParam param, Pageable pageable);
 
+    List<Event> findEventsByParam(EventAdminParam param, int offset);
+
     List<Event> findEventsByParam(EventPublicParam param, Pageable pageable);
+
+    List<Event> findEventsByParam(EventPublicParam param, int offset);
 }

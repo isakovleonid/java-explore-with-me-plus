@@ -30,7 +30,6 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto add(NewCategoryDto newCategory) {
         checkCategoryNameExists(newCategory.getName());
         Category category = categoryRepository.save(mapper.toCategory(newCategory));
-        log.info("Category was created: {}", category);
         return mapper.toCategoryDto(category);
     }
 
@@ -38,12 +37,11 @@ public class CategoryServiceImpl implements CategoryService {
     public void delete(Long id) {
         Category category = getCategoryOrThrow(id);
 
-
         if (eventRepository.existsByCategoryId(id)) {
             throw new ConflictException(String.format("Cannot delete category with id=%d because it has linked events", id));
         }
+
         categoryRepository.deleteById(id);
-        log.info("Category was deleted: {}", category);
     }
 
     @Override
@@ -64,11 +62,22 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<CategoryDto> findAll(int from, int size) {
-        int pageNumber = from / size;
-        Pageable pageable = PageRequest.of(pageNumber, size);
-        Page<Category> page = categoryRepository.findAll(pageable);
+        List<Category> categories;
 
-        return page.getContent().stream()
+        if (from > size && size > 0) {
+            int pageNumber = from / size;
+            Pageable pageable = PageRequest.of(pageNumber, size);
+            Page<Category> page = categoryRepository.findAll(pageable);
+            categories = page.getContent();
+        } else if (size == 0) {
+            categories = categoryRepository.findAll().stream()
+                    .skip(from)
+                    .toList();
+        } else {
+            return List.of();
+        }
+
+        return categories.stream()
                 .map(mapper::toCategoryDto)
                 .toList();
     }

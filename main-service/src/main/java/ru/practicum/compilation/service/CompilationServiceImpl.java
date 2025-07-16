@@ -29,48 +29,45 @@ public class CompilationServiceImpl implements CompilationService {
     private final EventRepository eventRepository;
 
     public List<CompilationDto> findBy(CompilationPublicParam param) {
-        log.info("Fetching compilations with params: {}", param);
+        List<Compilation> compilations;
+        if (param.getSize() == 0) {
+            if (param.getPinned() != null) {
+                compilations = compilationRepository.findByPinned(param.getPinned()).stream()
+                        .skip(param.getFrom())
+                        .toList();
+            } else {
+                compilations = compilationRepository.findAll().stream()
+                        .skip(param.getFrom())
+                        .toList();
+            }
+        } else if (param.getFrom() > param.getSize() && param.getSize() > 0) {
+            PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
 
-        PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
-
-        Page<Compilation> compilationPage;
-        if (param.getPinned() != null) {
-            compilationPage = compilationRepository.findByPinned(param.getPinned(), pageRequest);
+            Page<Compilation> compilationPage;
+            if (param.getPinned() != null) {
+                compilationPage = compilationRepository.findByPinned(param.getPinned(), pageRequest);
+            } else {
+                compilationPage = compilationRepository.findAll(pageRequest);
+            }
+            compilations = compilationPage.getContent();
         } else {
-            compilationPage = compilationRepository.findAll(pageRequest);
+            return List.of();
         }
 
-        List<CompilationDto> compilationDtos = compilationPage.stream()
-                .map(compilation -> {
-                    List<Event> events = eventRepository.findAllById(compilation.getEvents().stream()
-                            .map(Event::getId)
-                            .toList());
-                    return compilationMapper.toDto(compilation);
-                })
-                .toList();
 
-        log.info("Fetched {} compilations", compilationDtos.size());
-        return compilationDtos;
+        return compilations.stream()
+                .map(compilationMapper::toDto)
+                .toList();
     }
 
     public CompilationDto findById(Long compId) {
-        log.info("Fetching compilation by id={}", compId);
 
         Compilation compilation = findCompById(compId);
 
-        List<Event> events = eventRepository.findAllById(compilation.getEvents().stream()
-                .map(Event::getId)
-                .toList());
-
-        CompilationDto compilationDto = compilationMapper.toDto(compilation);
-        log.info("Fetched compilation: {}", compilationDto);
-
-        return compilationDto;
+        return compilationMapper.toDto(compilation);
     }
 
     public CompilationDto add(NewCompilationDto dto) {
-        log.info("Creating new compilation for events: {}", dto.getEvents());
-
         List<Event> events = List.of();
         if (dto.getEvents() != null) {
             events = eventRepository.findAllById(dto.getEvents());
@@ -84,8 +81,6 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     public void delete(Long compId) {
-        log.info("Deleting compilation with id: {}", compId);
-
         findCompById(compId);
 
         compilationRepository.deleteById(compId);
@@ -93,8 +88,6 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     public CompilationDto update(Long compId, UpdateCompilationRequest updateCompilationRequest) {
-        log.info("Updating compilation with id: {}", compId);
-
         Compilation findedCompilation = findCompById(compId);
 
         boolean pinned = findedCompilation.getPinned();

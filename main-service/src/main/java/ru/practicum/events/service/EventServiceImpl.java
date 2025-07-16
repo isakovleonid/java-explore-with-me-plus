@@ -17,7 +17,10 @@ import ru.practicum.events.dto.output.SwitchRequestsStatus;
 import ru.practicum.events.mapper.EventMapper;
 import ru.practicum.events.model.*;
 import ru.practicum.events.storage.EventRepository;
-import ru.practicum.exceptions.*;
+import ru.practicum.exceptions.ConflictException;
+import ru.practicum.exceptions.DateException;
+import ru.practicum.exceptions.NoHavePermissionException;
+import ru.practicum.exceptions.NotFoundException;
 import ru.practicum.requests.dto.ParticipationRequestDtoOut;
 import ru.practicum.requests.mapper.RequestMapper;
 import ru.practicum.requests.model.Request;
@@ -98,8 +101,12 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     @Override
     public List<EventFullDto> findEvents(EventAdminParam param) {
+        if (param.getSize() == 0) {
+            List<Event> events = eventRepository.findEventsByParam(param, param.getFrom());
+            return mapToFullDto(events);
+        }
         if (param.getFrom() > param.getSize()) {
-            throw new IncorrectlyMadeRequestException("Incorrectly size requested");
+            return List.of();
         }
         PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
         List<Event> events = eventRepository.findEventsByParam(param, pageRequest);
@@ -109,8 +116,14 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     @Override
     public List<EventShortDto> findEvents(EventPublicParam param) {
-        if (param.getFrom() > param.getSize()) {
-            throw new IncorrectlyMadeRequestException("Incorrectly size requested");
+        List<Event> events;
+        if (param.getSize() == 0) {
+            events = eventRepository.findEventsByParam(param, param.getFrom());
+        } else if (param.getFrom() < param.getSize()) {
+            PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
+            events = eventRepository.findEventsByParam(param, pageRequest);
+        } else {
+            return List.of();
         }
 
         if (param.getRangeStart() != null && param.getRangeEnd() != null
@@ -118,8 +131,6 @@ public class EventServiceImpl implements EventService {
             throw new IllegalArgumentException("DateStart cannot be later than the dateEnd");
         }
 
-        PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
-        List<Event> events = eventRepository.findEventsByParam(param, pageRequest);
         List<EventShortDto> eventShortDtos = mapToShortDto(events);
         List<EventShortDto> mutableEvents = new ArrayList<>(eventShortDtos);
 
@@ -292,12 +303,19 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     @Override
     public List<EventShortDto> getEventsForUser(Long userId, Integer from, Integer to) {
-        if (to < from) {
-            throw new IncorrectlyMadeRequestException("to must be greater than from");
+        List<Event> events;
+        if (to == 0) {
+            events = eventRepository.findAllByInitiatorId(userId).stream()
+                    .skip(from)
+                    .toList();
+        } else if (from > to && to > 0) {
+            PageRequest pageRequest = PageRequest.of(from / to, to);
+            events = eventRepository.findAllByInitiatorId(userId, pageRequest);
+        } else {
+            return List.of();
         }
-        PageRequest pageRequest = PageRequest.of(from / to, to);
 
-        List<Event> events = eventRepository.findAllByInitiatorId(userId, pageRequest);
+
         Map<Long, Long> views = Map.of();
 
         if (events.isEmpty()) {

@@ -1,6 +1,7 @@
 package ru.practicum.users.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +25,8 @@ public class UserAdminController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<UserDto> getAll(@RequestParam(required = false, defaultValue = "") List<Long> ids,
-                                @PositiveOrZero @RequestParam(required = false, defaultValue = "0") int from,
-                                @Positive @RequestParam(required = false, defaultValue = "10") int size) {
+                                @PositiveOrZero @RequestParam(required = false, defaultValue = "0") @Min(0) int from,
+                                @Positive @RequestParam(required = false, defaultValue = "10") @Min(0) int size) {
         log.info("GET /admin/users - Getting users");
         UserAdminParam params = new UserAdminParam(ids, from, size);
         return service.getAll(params);
