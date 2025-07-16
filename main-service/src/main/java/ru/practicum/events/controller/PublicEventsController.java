@@ -32,8 +32,6 @@ public class PublicEventsController {
 
     @GetMapping("/{eventId}")
     public EventFullDto getEventById(@PathVariable Long eventId, HttpServletRequest request) {
-        log.info("Get event {}", eventId);
-
         StatisticDto statDto = StatisticDto.builder()
                 .app("main-service")
                 .uri(request.getRequestURI())
@@ -60,8 +58,6 @@ public class PublicEventsController {
 
         EventPublicParam param = new EventPublicParam(
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
-
-        log.info("GET /events with params: {}", param);
         List<EventShortDto> eventShorts = eventService.findEvents(param);
 
         log.info("HIT request \"GET /events\" to statsService with params: {}", param);

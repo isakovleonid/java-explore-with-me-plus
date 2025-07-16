@@ -24,18 +24,12 @@ public class CompilationPublicController {
             @RequestParam(required = false) Boolean pinned,
             @RequestParam(defaultValue = "0") @Min(0) Integer from,
             @RequestParam(defaultValue = "10") @Min(0) Integer size) {
-        log.info("GET /compilations with pinned={}, from={}, size={}", pinned, from, size);
-
         CompilationPublicParam param = new CompilationPublicParam(pinned, from, size);
         return compilationService.findBy(param);
     }
 
     @GetMapping("/{compId}")
     public CompilationDto getCompilationById(@PathVariable Long compId) {
-
-        CompilationDto compilation = compilationService.findById(compId);
-        log.info("Returning compilation: {}", compilation);
-
-        return compilation;
+        return compilationService.findById(compId);
     }
 }
