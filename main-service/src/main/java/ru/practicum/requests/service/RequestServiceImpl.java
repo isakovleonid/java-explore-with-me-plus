@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.practicum.events.model.Event;
 import ru.practicum.events.model.State;
 import ru.practicum.events.storage.EventRepository;
-import ru.practicum.exceptions.DuplicateException;
+import ru.practicum.exceptions.ConflictException;
 import ru.practicum.exceptions.NotFoundException;
 import ru.practicum.requests.dto.ParticipationRequestDtoOut;
 import ru.practicum.requests.mapper.RequestMapper;
@@ -61,7 +61,7 @@ public class RequestServiceImpl implements RequestService {
         request.setEvent(event);
         request.setRequester(requester);
         request.setCreated(LocalDateTime.now());
-        request.setStatus(Status.PENDING);
+        request.setStatus(event.getParticipantLimit() == 0 ? Status.CONFIRMED : Status.PENDING);
 
         if (!event.getRequestModeration()) {
             request.setStatus(Status.CONFIRMED);
@@ -83,12 +83,11 @@ public class RequestServiceImpl implements RequestService {
 
         if (!request.getRequester().getId().equals(userId)) {
             log.warn("User with id={} cannot cancel non-his request with id={}", userId, requestId);
-            //todo DuplicateException -> ConflictException
-            throw new DuplicateException(String.format(
+            throw new ConflictException(String.format(
                     "User with id=%d cannot cancel non-his request with id=%d", userId, requestId));
         }
 
-        request.setStatus(Status.REJECTED);
+        request.setStatus(Status.CANCELED);
         Request updatedRequest = requestRepository.save(request);
 
         log.info("Request with id: {} cancelled successfully", requestId);
@@ -98,29 +97,27 @@ public class RequestServiceImpl implements RequestService {
     private void validateRequestCreation(User requester, Event event) {
         if (requestRepository.existsByRequesterIdAndEventId(requester.getId(), event.getId())) {
             log.warn("Request already exists for user with id={} and event with id={}", requester.getId(), event.getId());
-            throw new DuplicateException(String.format(
+            throw new ConflictException(String.format(
                     "Request already exists for user with id=%d and event with id=%d", requester.getId(), event.getId()));
         }
 
         if (event.getInitiator().getId().equals(requester.getId())) {
             log.warn("Event initiator with id={} cannot create a request for his event with id={}", requester.getId(), event.getId());
-            //todo DuplicateException -> ConflictException
-            throw new DuplicateException(String.format(
+            throw new ConflictException(String.format(
                     "Event initiator with id=%d cannot create a request for his event with id=%d", requester.getId(), event.getId()));
         }
 
         if (!event.getState().equals(State.PUBLISHED)) {
             log.warn("Cannot participate in unpublished event with id={}", event.getId());
-            //todo DuplicateException -> ConflictException
-            throw new DuplicateException(String.format("Cannot participate in unpublished event with id=%d", event.getId()));
+            throw new ConflictException(String.format("Cannot participate in unpublished event with id=%d", event.getId()));
         }
 
         if (event.getParticipantLimit() > 0 &&
-                requestRepository.countByEventId(event.getId()) >= event.getParticipantLimit()) {
+                requestRepository.countByEventIdAndStatus(event.getId(), Status.CONFIRMED) >= event.getParticipantLimit()) {
             log.warn("Participant limit reached for event with id={}", event.getId());
-            //todo DuplicateException -> ConflictException
-            throw new DuplicateException(String.format("Participant limit reached for event with id=%d", event.getId()));
+            throw new ConflictException(String.format("Participant limit reached for event with id=%d", event.getId()));
         }
+
     }
 
     private User findUserById(Long userId) {

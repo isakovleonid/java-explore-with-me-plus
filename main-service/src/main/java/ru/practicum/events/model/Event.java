@@ -36,16 +36,16 @@ public class Event {
     @JoinColumn(name = "location_id", referencedColumnName = "id")
     private Location location;
     @Column
-    private Boolean paid = false;
+    private Boolean paid;
     @Column(name = "participant_limit")
-    private Integer participantLimit = 0;
+    private Integer participantLimit;
     @Column(name = "published_on")
     private LocalDateTime publishedOn;
     @Column(name = "request_moderation")
-    private Boolean requestModeration = true;
+    private Boolean requestModeration;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private State state = State.PENDING;
+    private State state;
     @Column
     private String title;
 }

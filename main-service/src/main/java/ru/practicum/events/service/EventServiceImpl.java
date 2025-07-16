@@ -27,6 +27,8 @@ import ru.practicum.users.model.User;
 import ru.practicum.users.storage.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -65,17 +67,17 @@ public class EventServiceImpl implements EventService {
                 throw new DateException("Date must be before one hour before the event start");
             }
             if (event.getState() != State.PENDING) {
-                throw new IncorrectlyMadeRequestException("Cannot publish the event because it's not in the right state: "
+                throw new ConflictException("Cannot publish the event because it's not in the right state: "
                         + event.getState().name());
             }
             event.setState(State.PUBLISHED);
             event.setPublishedOn(LocalDateTime.now());
         } else if (request.getStateAction().equals(StateActionForAdmin.REJECT_EVENT)) {
             if (event.getState() == State.PUBLISHED) {
-                throw new IncorrectlyMadeRequestException("Cannot publish the event because it's not in the right state: "
+                throw new ConflictException("Cannot publish the event because it's not in the right state: "
                         + event.getState().name());
             }
-            event.setState(State.CANCELLED);
+            event.setState(State.CANCELED);
         }
 
         return eventMapper.toEventFullDto(eventRepository.save(event));
@@ -95,7 +97,7 @@ public class EventServiceImpl implements EventService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<EventFullDto> findEvents(EventParam param) {
+    public List<EventFullDto> findEvents(EventAdminParam param) {
         if (param.getFrom() > param.getSize()) {
             throw new IncorrectlyMadeRequestException("Incorrectly size requested");
         }
@@ -104,11 +106,41 @@ public class EventServiceImpl implements EventService {
         return mapToFullDto(events);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<EventShortDto> findEvents(EventPublicParam param) {
+        if (param.getFrom() > param.getSize()) {
+            throw new IncorrectlyMadeRequestException("Incorrectly size requested");
+        }
+
+        if (param.getRangeStart() != null && param.getRangeEnd() != null
+                && param.getRangeStart().isAfter(param.getRangeEnd())) {
+            throw new IllegalArgumentException("DateStart cannot be later than the dateEnd");
+        }
+
+        PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
+        List<Event> events = eventRepository.findEventsByParam(param, pageRequest);
+        List<EventShortDto> eventShortDtos = mapToShortDto(events);
+        List<EventShortDto> mutableEvents = new ArrayList<>(eventShortDtos);
+
+        if (param.getSort() != null) {
+            switch (param.getSort()) {
+                case "EVENT_DATE":
+                    mutableEvents.sort(Comparator.comparing(EventShortDto::getEventDate));
+                    break;
+                case "VIEWS":
+                    mutableEvents.sort(Comparator.comparing(EventShortDto::getViews).reversed());
+                    break;
+                default:
+                    break;
+            }
+        }
+        return mutableEvents;
+    }
+
     @Transactional
     @Override
-    public SwitchRequestsStatus switchRequestsStatus(EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest,
-                                                     Long eventId,
-                                                     Long userId) {
+    public SwitchRequestsStatus switchRequestsStatus(EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest, Long eventId, Long userId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id " + eventId + " " + "not found"));
         if (!event.getInitiator().getId().equals(userId)) {
@@ -122,32 +154,61 @@ public class EventServiceImpl implements EventService {
         }
 
         EventFullDto eventFullDto = mapToFullDto(List.of(event)).getFirst();
-        long freeLimit = eventFullDto.getParticipantLimit() - eventFullDto.getConfirmedRequests();
-        if (freeLimit <= 0) {
-            throw new ConflictException("The participant limit has been reached");
+
+
+        if (eventRequestStatusUpdateRequest.getStatus() == Status.CONFIRMED) {
+            int freeLimit = (int) Math.min(eventFullDto.getParticipantLimit() - eventFullDto.getConfirmedRequests(), eventRequestStatusUpdateRequest.getRequestIds().size());
+            if (freeLimit <= 0) {
+                throw new ConflictException("The participant limit has been reached");
+            }
+
+            List<Long> confirmedIds = eventRequestStatusUpdateRequest.getRequestIds().subList(0,
+                    freeLimit);
+            List<Long> rejectedIds = eventRequestStatusUpdateRequest.getRequestIds().subList(freeLimit,
+                    eventRequestStatusUpdateRequest.getRequestIds().size());
+
+            List<Request> requests = requestRepository.findAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds());
+
+            List<ParticipationRequestDtoOut> rejected = requests.stream()
+                    .filter(obj -> rejectedIds.contains(obj.getId()))
+                    .peek(obj -> {
+                        if (obj.getStatus() == Status.CONFIRMED) {
+                            throw new ConflictException("Request with id " + obj.getId() + " has been confirmed. It cannot be rejected ");
+                        }
+                    })
+                    .map(requestMapper::toParticipationRequestDtoOut)
+                    .peek(obj -> obj.setStatus(Status.REJECTED))
+                    .toList();
+
+            List<ParticipationRequestDtoOut> confirmed = requests.stream()
+                    .filter(obj -> confirmedIds.contains(obj.getId()))
+                    .peek(obj -> {
+                        if (obj.getStatus() == Status.REJECTED) {
+                            throw new ConflictException("Request with id " + obj.getId() + " has been confirmed. It cannot be rejected ");
+                        }
+                    })
+                    .map(requestMapper::toParticipationRequestDtoOut)
+                    .peek(obj -> obj.setStatus(Status.CONFIRMED))
+                    .toList();
+
+            requestRepository.setStatusForAllByIdIn(rejectedIds, Status.REJECTED);
+            requestRepository.setStatusForAllByIdIn(confirmedIds, Status.CONFIRMED);
+
+            return new SwitchRequestsStatus(confirmed, rejected);
+        } else {
+            List<ParticipationRequestDtoOut> rejected = requestRepository.findAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds())
+                    .stream()
+                    .peek(obj -> {
+                        if (obj.getStatus() == Status.CONFIRMED) {
+                            throw new ConflictException("Request with id " + obj.getId() + " has been confirmed. It cannot be rejected ");
+                        }
+                    })
+                    .map(requestMapper::toParticipationRequestDtoOut)
+                    .peek(obj -> obj.setStatus(Status.REJECTED))
+                    .toList();
+            requestRepository.setStatusForAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds(), Status.REJECTED);
+            return new SwitchRequestsStatus(List.of(), rejected);
         }
-
-        List<Long> confirmedIds = eventRequestStatusUpdateRequest.getRequestIds().subList(0, (int) freeLimit);
-        List<Long> requestIds = eventRequestStatusUpdateRequest.getRequestIds().subList((int) freeLimit,
-                eventRequestStatusUpdateRequest.getRequestIds().size());
-
-        List<Request> requests = requestRepository.findAllByIdIn(eventRequestStatusUpdateRequest.getRequestIds());
-
-        List<ParticipationRequestDtoOut> confirmed = requests.stream()
-                .filter(obj -> confirmedIds.contains(obj.getId()))
-                .map(requestMapper::toParticipationRequestDtoOut)
-                .toList();
-
-        requestRepository.setStatusForAllByIdIn(confirmedIds, Status.CONFIRMED);
-
-        List<ParticipationRequestDtoOut> rejected = requests.stream()
-                .filter(obj -> requestIds.contains(obj.getId()))
-                .map(requestMapper::toParticipationRequestDtoOut)
-                .toList();
-
-        requestRepository.setStatusForAllByIdIn(confirmedIds, Status.REJECTED);
-
-        return new SwitchRequestsStatus(confirmed, rejected);
     }
 
     @Override
@@ -158,7 +219,7 @@ public class EventServiceImpl implements EventService {
             throw new NoHavePermissionException("You do not have permission to update this event");
         }
 
-        List<Request> requests = requestRepository.findAllByEventIdAndRequesterId(eventId, userId);
+        List<Request> requests = requestRepository.findAllByEventId(eventId);
 
         return requests.stream()
                 .map(requestMapper::toParticipationRequestDtoOut)
@@ -172,12 +233,18 @@ public class EventServiceImpl implements EventService {
             throw new NoHavePermissionException("You do not have permission to update this event");
         }
         if (event.getState() == State.PUBLISHED) {
-            throw new OperationNotAllowedException("Only pending or canceled events can be changed");
+            throw new ConflictException("Only pending or canceled events can be changed");
         }
-        dateValidation(updateEventUserRequest.getEventDate(), 2);
-
-        Category category = categoryRepository.findById(updateEventUserRequest.getCategory())
-                .orElseThrow(() -> new NotFoundException("Category not found"));
+        if (updateEventUserRequest.getEventDate() != null) {
+            dateValidation(updateEventUserRequest.getEventDate(), 2);
+        }
+        Category category;
+        if (updateEventUserRequest.getCategory() != null) {
+            category = categoryRepository.findById(updateEventUserRequest.getCategory())
+                    .orElseThrow(() -> new NotFoundException("Category not found"));
+        } else {
+            category = event.getCategory();
+        }
 
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
         Event newEvent = eventMapper.toEvent(updateEventUserRequest, category, user);
@@ -186,7 +253,7 @@ public class EventServiceImpl implements EventService {
         if (updateEventUserRequest.getStateAction() == StateActionForUser.SEND_TO_REVIEW) {
             event.setState(State.PENDING);
         } else if (updateEventUserRequest.getStateAction() == StateActionForUser.CANCEL_REVIEW) {
-            event.setState(State.CANCELLED);
+            event.setState(State.CANCELED);
         }
         event = eventRepository.save(event);
         return mapToFullDto(List.of(event)).getFirst();
@@ -215,6 +282,9 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("category with id " + newEventDto.getCategory() + " not found"));
 
         Event event = eventMapper.toEvent(newEventDto, category, user);
+        if (event.getState() == null) {
+            event.setState(State.PENDING);
+        }
         event = eventRepository.save(event);
         return mapToFullDto(List.of(event)).getFirst();
     }
@@ -284,6 +354,24 @@ public class EventServiceImpl implements EventService {
         }
 
         return eventFullDtos;
+    }
+
+    private List<EventShortDto> mapToShortDto(List<Event> events) {
+        List<Long> ids = events.stream()
+                .map(Event::getId)
+                .toList();
+        Map<Long, Long> confirmedRequests = getRequests(ids, Status.CONFIRMED);
+        Map<Long, Long> rejectedRequests = getRequests(ids, Status.REJECTED);
+        Map<Long, Long> views = statClientService.getEventsView(events);
+
+        List<EventShortDto> eventShortDtos = events.stream()
+                .map(eventMapper::toEventShortDto).toList();
+        for (EventShortDto eventShortDto : eventShortDtos) {
+            eventShortDto.setConfirmedRequests(confirmedRequests.getOrDefault(eventShortDto.getId(), 0L));
+            eventShortDto.setViews(views.getOrDefault(eventShortDto.getId(), 0L));
+        }
+
+        return eventShortDtos;
     }
 
     private Map<Long, Long> getRequests(List<Long> events, Status status) {
