@@ -3,7 +3,6 @@ package ru.practicum.events.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.events.dto.in.EventRequestStatusUpdateRequest;
@@ -20,7 +19,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/users/{userId}/events")
-@Slf4j
 public class UserEventsController {
     private final EventServiceImpl eventService;
 
@@ -35,14 +33,12 @@ public class UserEventsController {
     @GetMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
     public List<ParticipationRequestDtoOut> getRequests(@PathVariable Long eventId, @PathVariable Long userId) {
-        log.info("Get requests for event {} and user {}", eventId, userId);
         return eventService.getRequests(userId, eventId);
     }
 
     @GetMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
     public EventFullDto getEvent(@PathVariable Long eventId, @PathVariable Long userId) {
-        log.info("Get event {} for user {}", eventId, userId);
         return eventService.getEvent(eventId, userId);
     }
 
@@ -51,15 +47,12 @@ public class UserEventsController {
     public List<EventShortDto> getUserEvents(@PathVariable Long userId,
                                              @RequestParam(defaultValue = "0") @Min(0) Integer from,
                                              @RequestParam(defaultValue = "10") @Min(0) Integer to) {
-        log.info("get events for user with userId {}.", userId);
         return eventService.getEventsForUser(userId, from, to);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto createEvent(@RequestBody @Valid NewEventDto newEventDto, @PathVariable Long userId) {
-        log.info("create event for user with userId {}.", userId);
-        log.info(newEventDto.toString());
         return eventService.createEvent(newEventDto, userId);
     }
 
@@ -68,7 +61,6 @@ public class UserEventsController {
     public EventFullDto updateEvent(@PathVariable Long eventId,
                                     @RequestBody @Valid UpdateEventUserRequest updateEventUserRequest,
                                     @PathVariable Long userId) {
-        log.info("update event with userId {} for user with userId {}.", eventId, userId);
         return eventService.updateEvent(updateEventUserRequest, eventId, userId);
     }
 }

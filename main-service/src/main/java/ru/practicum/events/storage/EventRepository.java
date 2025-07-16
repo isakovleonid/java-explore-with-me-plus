@@ -16,6 +16,12 @@ public interface EventRepository extends JpaRepository<Event, Long>, QuerydslPre
             "ORDER BY e.createdOn")
     List<Event> findAllByInitiatorId(@Param("initiatorId") Long initiatorId, Pageable pageable);
 
+    @Query("SELECT e " +
+            "FROM Event AS e " +
+            "WHERE e.initiator.id = :initiatorId " +
+            "ORDER BY e.createdOn")
+    List<Event> findAllByInitiatorId(@Param("initiatorId") Long initiatorId);
+
     @Query("SELECT e.id, e.initiator " +
             "FROM Event AS e " +
             "WHERE e.id IN :eventsIds " +

@@ -7,11 +7,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import ru.practicum.exceptions.DuplicateException;
 import ru.practicum.exceptions.NotFoundException;
 import ru.practicum.users.dto.in.NewUserRequest;
-
 import ru.practicum.users.dto.in.UserAdminParam;
 import ru.practicum.users.dto.output.UserDto;
 import ru.practicum.users.mapper.UserMapper;
@@ -30,26 +28,43 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     @Override
     public List<UserDto> getAll(UserAdminParam params) {
-        Page<User> usersPage;
-        int pageNumber = params.getFrom() / params.getSize();
-        Pageable pageable = PageRequest.of(pageNumber, params.getSize());
+        if (params.getSize() == 0) {
+            if (params.getIds() != null && !params.getIds().isEmpty()) {
+                return repository.findAllByIdIn(params.getIds()).stream()
+                        .skip(params.getFrom())
+                        .map(mapper::toUserDto)
+                        .toList();
+            } else {
+                return repository.findAll().stream()
+                        .skip(params.getFrom())
+                        .map(mapper::toUserDto)
+                        .toList();
+            }
 
-        if (params.getIds() != null && !params.getIds().isEmpty()) {
-            usersPage = repository.findAllByIdIn(params.getIds(), pageable);
+        } else if (params.getFrom() < params.getSize()) {
+            Page<User> usersPage;
+            int pageNumber = params.getFrom() / params.getSize();
+            Pageable pageable = PageRequest.of(pageNumber, params.getSize());
+
+            if (params.getIds() != null && !params.getIds().isEmpty()) {
+                usersPage = repository.findAllByIdIn(params.getIds(), pageable);
+            } else {
+                usersPage = repository.findAll(pageable);
+            }
+
+            return usersPage.stream()
+                    .map(mapper::toUserDto)
+                    .toList();
         } else {
-            usersPage = repository.findAll(pageable);
+            return List.of();
         }
-
-        return usersPage.stream()
-                .map(mapper::toUserDto)
-                .toList();
     }
 
     @Transactional
     @Override
     public UserDto add(NewUserRequest newUserRequest) {
         if (repository.existsByEmail(newUserRequest.getEmail())) {
-            throw new DuplicateException("Email already exists: " +  newUserRequest.getEmail());
+            throw new DuplicateException("Email already exists: " + newUserRequest.getEmail());
         }
         User user = repository.save(mapper.toUser(newUserRequest));
         log.info("User was created: {}", user);

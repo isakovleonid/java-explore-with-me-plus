@@ -28,6 +28,7 @@ public class AdminEventsController {
                                          @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
                                          @RequestParam(value = "from", defaultValue = "0") @Min(0) Integer from,
                                          @RequestParam(value = "size", defaultValue = "10") @Min(0) Integer size) {
+
         EventAdminParam param = new EventAdminParam();
         param.setUsers(users);
         param.setStates(states);
