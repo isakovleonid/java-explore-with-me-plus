@@ -308,7 +308,7 @@ public class EventServiceImpl implements EventService {
             events = eventRepository.findAllByInitiatorId(userId).stream()
                     .skip(from)
                     .toList();
-        } else if (from > to && to > 0) {
+        } else if (from < to && to > 0) {
             PageRequest pageRequest = PageRequest.of(from / to, to);
             events = eventRepository.findAllByInitiatorId(userId, pageRequest);
         } else {

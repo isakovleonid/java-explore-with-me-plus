@@ -64,7 +64,7 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryDto> findAll(int from, int size) {
         List<Category> categories;
 
-        if (from > size && size > 0) {
+        if (from < size && size > 0) {
             int pageNumber = from / size;
             Pageable pageable = PageRequest.of(pageNumber, size);
             Page<Category> page = categoryRepository.findAll(pageable);

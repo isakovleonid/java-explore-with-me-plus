@@ -41,7 +41,7 @@ public class UserServiceImpl implements UserService {
                         .toList();
             }
 
-        } else if (params.getFrom() > params.getSize()) {
+        } else if (params.getFrom() < params.getSize()) {
             Page<User> usersPage;
             int pageNumber = params.getFrom() / params.getSize();
             Pageable pageable = PageRequest.of(pageNumber, params.getSize());

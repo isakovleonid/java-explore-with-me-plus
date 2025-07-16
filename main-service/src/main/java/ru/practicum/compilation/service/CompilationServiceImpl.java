@@ -40,7 +40,7 @@ public class CompilationServiceImpl implements CompilationService {
                         .skip(param.getFrom())
                         .toList();
             }
-        } else if (param.getFrom() > param.getSize() && param.getSize() > 0) {
+        } else if (param.getFrom() < param.getSize() && param.getSize() > 0) {
             PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
 
             Page<Compilation> compilationPage;
