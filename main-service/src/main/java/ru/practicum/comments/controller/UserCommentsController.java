@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.comments.dto.in.CommentParam;
 import ru.practicum.comments.dto.in.GetCommentParam;
 import ru.practicum.comments.dto.in.NewCommentDto;
-import ru.practicum.comments.dto.output.CommentDto;
+import ru.practicum.comments.dto.output.CommentFullDto;
+import ru.practicum.comments.dto.output.CommentShortDto;
 import ru.practicum.comments.service.CommentService;
 
 import java.util.List;
@@ -23,9 +24,9 @@ public class UserCommentsController {
 
     @PostMapping("/events/{eventId}/comments")
     @ResponseStatus(HttpStatus.OK)
-    public CommentDto create(@Valid @RequestBody NewCommentDto newCommentDto,
-                             @PathVariable Long userId,
-                             @PathVariable Long eventId) {
+    public CommentShortDto create(@Valid @RequestBody NewCommentDto newCommentDto,
+                                  @PathVariable Long userId,
+                                  @PathVariable Long eventId) {
         log.info("Create comment user with userId {} for event with eventId {}.", userId, eventId);
         return commentService.create(newCommentDto, userId, eventId);
     }
@@ -42,38 +43,38 @@ public class UserCommentsController {
 
     @PatchMapping("/events/{eventId}/comments/{commentId}")
     @ResponseStatus(HttpStatus.OK)
-    public CommentDto update(@RequestBody NewCommentDto newCommentDto,
-                             @PathVariable Long userId,
-                             @PathVariable Long eventId,
-                             @PathVariable Long commentId) {
+    public CommentFullDto update(@RequestBody NewCommentDto newCommentDto,
+                                 @PathVariable Long userId,
+                                 @PathVariable Long eventId,
+                                 @PathVariable Long commentId) {
         log.info("Update comment with commentId {} user with userId {} for event with eventId {}.", commentId, userId, eventId);
         CommentParam param = new CommentParam(userId, eventId, commentId);
         return commentService.update(newCommentDto, param);
     }
 
     @GetMapping("/events/{eventId}/comments/{commentId}")
-    public CommentDto getComment(@PathVariable Long userId,
-                                 @PathVariable Long eventId,
-                                 @PathVariable Long commentId) {
+    public CommentFullDto getComment(@PathVariable Long userId,
+                                     @PathVariable Long eventId,
+                                     @PathVariable Long commentId) {
         log.info("Get comment with commentId {} user with userId {} for event with eventId {}.", commentId, userId, eventId);
         CommentParam param = new CommentParam(userId, eventId, commentId);
         return commentService.getComment(param);
     }
 
     @GetMapping("/events/{eventId}/comments")
-    public List<CommentDto> getCommentsByEventId(@PathVariable Long userId,
-                                                 @PathVariable Long eventId,
-                                                 @RequestParam(defaultValue = "0") @Min(0) Integer from,
-                                                 @RequestParam(defaultValue = "10") @Min(0) Integer to) {
+    public List<CommentFullDto> getCommentsByEventId(@PathVariable Long userId,
+                                                     @PathVariable Long eventId,
+                                                     @RequestParam(defaultValue = "0") @Min(0) Integer from,
+                                                     @RequestParam(defaultValue = "10") @Min(0) Integer to) {
         log.info("Get comments user with userId {} for event with eventId {}.", userId, eventId);
         GetCommentParam param = new GetCommentParam(userId, from, to);
         return commentService.getCommentsByEventId(userId, param);
     }
 
     @GetMapping("/comments")
-    public List<CommentDto> getComments(@PathVariable Long userId,
-                                        @RequestParam(defaultValue = "0") @Min(0) Integer from,
-                                        @RequestParam(defaultValue = "10") @Min(0) Integer to) {
+    public List<CommentFullDto> getComments(@PathVariable Long userId,
+                                            @RequestParam(defaultValue = "0") @Min(0) Integer from,
+                                            @RequestParam(defaultValue = "10") @Min(0) Integer to) {
         log.info("Get comments user with userId {}", userId);
         GetCommentParam param = new GetCommentParam(userId, from, to);
         return commentService.getComments(param);

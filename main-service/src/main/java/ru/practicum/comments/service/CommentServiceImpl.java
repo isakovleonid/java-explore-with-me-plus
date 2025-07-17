@@ -9,7 +9,8 @@ import org.springframework.stereotype.Service;
 import ru.practicum.comments.dto.in.CommentParam;
 import ru.practicum.comments.dto.in.GetCommentParam;
 import ru.practicum.comments.dto.in.NewCommentDto;
-import ru.practicum.comments.dto.output.CommentDto;
+import ru.practicum.comments.dto.output.CommentFullDto;
+import ru.practicum.comments.dto.output.CommentShortDto;
 import ru.practicum.comments.mapper.CommentMapper;
 import ru.practicum.comments.model.Comment;
 import ru.practicum.comments.storage.CommentRepository;
@@ -32,7 +33,7 @@ public class CommentServiceImpl implements CommentService {
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
 
-    public CommentDto create(NewCommentDto newCommentDto, Long userId, Long eventId) {
+    public CommentShortDto create(NewCommentDto newCommentDto, Long userId, Long eventId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("user with id " + userId + " not found"));
         Event event = eventRepository.findById(eventId)
@@ -49,7 +50,7 @@ public class CommentServiceImpl implements CommentService {
         }
         comment = commentRepository.save(comment);
 
-        return commentMapper.toCommentDto(comment);
+        return commentMapper.toCommentShortDto(comment);
     }
 
     public void delete(CommentParam param) {
@@ -63,15 +64,16 @@ public class CommentServiceImpl implements CommentService {
         log.info("Comment {} was deleted", comment);
     }
 
-    public CommentDto update(NewCommentDto newComment, CommentParam param) {
+    public CommentFullDto update(NewCommentDto newComment, CommentParam param) {
         Comment existingComment = checkIfExist(param.getUserId(), param.getEventId(), param.getCommentId());
         if (!existingComment.getAuthor().getId().equals(param.getUserId())) {
             throw new ValidationException("User with id " + param.getUserId() + " is not author of comment " + existingComment.getId());
         }
 
-        if (existingComment.getState() != State.PENDING) {
-            throw new ConflictException("Cannot publish the comment because it's not in the right state: "
-                    + existingComment.getState().name());
+        if (existingComment.getState() == State.PUBLISHED) {
+            existingComment.setState(State.PENDING);
+        } else if (existingComment.getState() != State.PENDING) {
+            throw new ConflictException("Cannot update canceled comment with id " + existingComment.getState().name());
         }
 
         existingComment.setText(newComment.getText());
@@ -82,12 +84,12 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toCommentDto(updatedComment);
     }
 
-    public CommentDto getComment(CommentParam param) {
+    public CommentFullDto getComment(CommentParam param) {
         Comment comment = checkIfExist(param.getUserId(), param.getEventId(), param.getCommentId());
         return commentMapper.toCommentDto(comment);
     }
 
-    public List<CommentDto> getCommentsByEventId(Long eventId, GetCommentParam param) {
+    public List<CommentFullDto> getCommentsByEventId(Long eventId, GetCommentParam param) {
         Long userId = param.getUserId();
         Integer from = param.getFrom();
         Integer to = param.getTo();
@@ -107,7 +109,7 @@ public class CommentServiceImpl implements CommentService {
                 .toList();
     }
 
-    public List<CommentDto> getComments(GetCommentParam param) {
+    public List<CommentFullDto> getComments(GetCommentParam param) {
         Long userId = param.getUserId();
         Integer from = param.getFrom();
         Integer to = param.getTo();
