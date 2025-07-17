@@ -1,0 +1,6 @@
+### Вывести переменные. В idea будут отображены в консоли в response handler
+GET {{main-service-url}}/d
+
+> {%
+    client.log(client.global)
+%}

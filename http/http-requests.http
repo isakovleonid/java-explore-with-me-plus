@@ -1,0 +1,159 @@
+### 1. Создание нового пользователяпользователя
+POST {{main-service-url}}/admin/users
+Content-Type: application/json
+
+{
+  "name": "{{$random.name.firstName}}",
+  "email": "{{$random.email}}"
+}
+> {%
+    client.global.set("userId", response.body.id)
+%}
+
+### 2. Получение всех пользователей.
+GET {{main-service-url}}/admin/users
+
+### 3. Удаление пользователя
+DELETE {{main-service-url}}/admin/users/1
+
+### 4. Создание категории
+POST {{main-service-url}}/admin/categories
+Content-Type: application/json
+
+{
+  "name": "{{$random.address.city}}"
+}
+> {%
+    client.global.set("lastCatId", response.body.id)
+%}
+### 5.Удаление категории
+DELETE {{main-service-url}}/admin/categories/4
+
+### 6. Обновление категории
+PATCH {{main-service-url}}/admin/categories/1
+Content-Type: application/json
+
+{
+  "name": "{{$random.address.city}}"
+}
+
+### 7. Получение категорий
+GET {{main-service-url}}/categories
+
+### 8. Получение категории
+GET {{main-service-url}}/categories/3
+
+### 9. Создание подборки
+POST {{main-service-url}}/admin/compilations
+Content-Type: application/json
+
+{
+  "events": [1],
+  "pinned": false,
+  "title": "{{$random.lorem.word}}"
+}
+
+### 10. Удаление подборки.
+DELETE {{main-service-url}}/admin/compilations/1
+
+### 11. Обновление подборки
+PATCH {{main-service-url}}/admin/compilations/2
+Content-Type: application/json
+
+{
+  "events": [1],
+  "pinned": true,
+  "title": "{{$random.lorem.word}}"
+}
+
+### 12. Получение подборок
+GET {{main-service-url}}/compilations?pinned=true&from0&size25
+
+### 13. Получение подборки
+{{main-service-url}}/compilations/1
+
+### 14. Создание запроса к событию.
+POST {{main-service-url}}/users/{{userId}}/requests?eventId={{eventId}}
+Content-Type: application/json
+
+### 15. Получение всех запросов
+GET {{main-service-url}}/users/{{userId}}/requests
+
+
+### 16. Отмена запроса.
+PATCH {{main-service-url}}/users/{{userId}}/requests/1/cancel
+
+
+### 17. Создание события для пользователя
+POST {{main-service-url}}/users/{{userId}}/events
+Content-Type: application/json
+
+{
+  "annotation": "{{$random.lorem.paragraph}}",
+  "category": 1,
+  "description": "{{$random.lorem.paragraph}}",
+  "eventDate": "2030-07-08 16:50:13",
+  "location": {
+    "lat": 81.7575,
+    "lon": 20.4882
+  },
+  "paid": true,
+  "participantLimit": {{$random.integer(999)}},
+  "requestModeration": true,
+  "title": "{{$random.lorem.sentence}}"
+}
+> {%
+    client.global.set("eventId", response.body.id)
+%}
+
+### 18. Изменение статуса запроса
+PATCH {{main-service-url}}/users/{{userId}}/events/{{eventId}}/requests
+Content-Type: application/json
+
+{
+  "requestIds": [],
+  "status": "CONFIRMED"
+}
+
+### 19. Получение запросов к событию
+GET {{main-service-url}}/users/{{userId}}/events/{{eventId}}/requests
+
+### 20. Получение события
+GET {{main-service-url}}/users/{{userId}}/events/{{eventId}}
+
+### 21. Получение событий пользователя
+GET {{main-service-url}}/users/{{userId}}/events
+
+### 22. Обновление события пользователем
+PATCH {{main-service-url}}/users/{{userId}}/events/{{eventId}}
+Content-Type: application/json
+
+{
+  "annotation": "{{$random.lorem.characters}}",
+  "category": {{lastCatId}},
+  "description": "{{$random.lorem.characters}}",
+  "eventDate": "2045-07-08 16:50:13",
+  "location": {
+  "lat": 85.0,
+  "lon": 11.1414
+  },
+  "paid": false,
+  "participantLimit": {{$random.integer(999)}},
+  "requestModeration": false,
+  "stateAction": "CANCEL_REVIEW",
+  "title": "{{$random.lorem.sentence}}"
+}
+
+### 23. Получение событий администратором
+GET {{main-service-url}}/admin/events?users=1&states=CANCELLED&categories=1&start=2040-07-08%2016:50:00&end=2050-07-08%2016:50:00
+
+### 24. Редактирование события администратором
+PATCH {{main-service-url}}/admin/events/1
+Content-Type: application/json
+
+{
+  "annotation": "annotation edit ..................................................",
+  "category": 1,
+  "description": "description edit ......................................................",
+  "stateAction": "PUBLISH_EVENT"
+}

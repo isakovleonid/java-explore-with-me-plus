@@ -8,10 +8,20 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 
 @RestControllerAdvice("ru.practicum.server.controller")
 @Slf4j
 public class ErrorHandler {
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handle(IllegalArgumentException ex) {
+        return new ApiError(HttpStatus.BAD_REQUEST,
+                "Bad request",
+                ex.getMessage(),
+                Arrays.toString(ex.getStackTrace()));
+    }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
