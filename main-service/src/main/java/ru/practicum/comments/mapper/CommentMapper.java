@@ -3,7 +3,7 @@ package ru.practicum.comments.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import ru.practicum.comments.dto.in.NewCommentDto;
-import ru.practicum.comments.dto.out.CommentDto;
+import ru.practicum.comments.output.CommentDto;
 import ru.practicum.comments.model.Comment;
 import ru.practicum.events.mapper.EventMapper;
 import ru.practicum.events.model.Event;

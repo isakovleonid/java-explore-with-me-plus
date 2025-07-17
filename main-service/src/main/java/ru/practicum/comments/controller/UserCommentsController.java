@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.comments.dto.in.CommentParam;
 import ru.practicum.comments.dto.in.GetCommentParam;
 import ru.practicum.comments.dto.in.NewCommentDto;
-import ru.practicum.comments.dto.out.CommentDto;
+import ru.practicum.comments.output.CommentDto;
 import ru.practicum.comments.service.CommentService;
 
 import java.util.List;

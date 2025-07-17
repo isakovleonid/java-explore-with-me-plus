@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import ru.practicum.comments.dto.in.CommentParam;
 import ru.practicum.comments.dto.in.GetCommentParam;
 import ru.practicum.comments.dto.in.NewCommentDto;
-import ru.practicum.comments.dto.out.CommentDto;
+import ru.practicum.comments.output.CommentDto;
 import ru.practicum.comments.mapper.CommentMapper;
 import ru.practicum.comments.model.Comment;
 import ru.practicum.comments.storage.CommentRepository;
