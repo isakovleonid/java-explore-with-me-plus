@@ -1,4 +1,4 @@
-package ru.practicum.comments.output;
+package ru.practicum.comments.dto.output;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
