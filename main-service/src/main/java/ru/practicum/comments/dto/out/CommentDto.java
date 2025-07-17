@@ -1,0 +1,26 @@
+package ru.practicum.comments.dto.out;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import ru.practicum.events.dto.output.EventShortDto;
+import ru.practicum.events.model.State;
+import ru.practicum.users.dto.output.UserDto;
+
+import java.time.LocalDateTime;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class CommentDto {
+    Long id;
+    String text;
+    EventShortDto event;
+    UserDto author;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    LocalDateTime createdOn;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    LocalDateTime publishedOn;
+    State state;
+}
