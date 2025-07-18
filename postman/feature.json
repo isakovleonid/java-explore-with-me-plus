@@ -28,18 +28,11 @@
 									"        const event = await api.addEvent(user.id, rnd.getEvent(category.id));\r",
 									"        pm.collectionVariables.set(\"eventId\", event.id);\r",
 									"        await api.publishEvent(event.id)\r",
-									"        comment = {\r",
-									"            text: \"texttexttexttexttexttexttext\"\r",
-									"        }\r",
+									"        comment = rnd.getComment();\r",
+									"        pm.variables.set(\"requestBody\", JSON.stringify(comment));\r",
 									"    } catch(err) {\r",
 									"        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
 									"    }\r",
-									"\r",
-									"    pm.request.body.update({\r",
-									"        mode: 'raw',\r",
-									"        raw: JSON.stringify(comment),\r",
-									"        options: { raw: { language: 'json' } }\r",
-									"    });\r",
 									"};\r",
 									"\r",
 									"const interval = setInterval(() => {}, 1000);\r",
@@ -106,6 +99,15 @@
 					"request": {
 						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{requestBody}}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId/events/:eventId/comments",
 							"host": [
@@ -154,15 +156,10 @@
 									"        comment = {\r",
 									"            text: \"12345\"\r",
 									"        };\r",
+									"        pm.variables.set(\"requestBody\", JSON.stringify(comment));\r",
 									"    } catch(err) {\r",
 									"        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
 									"    }\r",
-									"\r",
-									"    pm.request.body.update({\r",
-									"        mode: 'raw',\r",
-									"        raw: JSON.stringify(comment),\r",
-									"        options: { raw: { language: 'json' } }\r",
-									"    });\r",
 									"};\r",
 									"\r",
 									"const interval = setInterval(() => {}, 1000);\r",
@@ -203,6 +200,15 @@
 					"request": {
 						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{requestBody}}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId/events/:eventId/comments",
 							"host": [
@@ -251,15 +257,10 @@
 									"        comment = {\r",
 									"            text: \"\"\r",
 									"        };\r",
+									"        pm.variables.set(\"requestBody\", JSON.stringify(comment));\r",
 									"    } catch(err) {\r",
 									"        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
 									"    }\r",
-									"\r",
-									"    pm.request.body.update({\r",
-									"        mode: 'raw',\r",
-									"        raw: JSON.stringify(comment),\r",
-									"        options: { raw: { language: 'json' } }\r",
-									"    });\r",
 									"};\r",
 									"\r",
 									"const interval = setInterval(() => {}, 1000);\r",
@@ -300,6 +301,15 @@
 					"request": {
 						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{requestBody}}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId/events/:eventId/comments",
 							"host": [
@@ -348,15 +358,10 @@
 									"        comment = {\r",
 									"            text: \"                                                                                                        \"\r",
 									"        };\r",
+									"        pm.variables.set(\"requestBody\", JSON.stringify(comment));\r",
 									"    } catch(err) {\r",
 									"        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
 									"    }\r",
-									"\r",
-									"    pm.request.body.update({\r",
-									"        mode: 'raw',\r",
-									"        raw: JSON.stringify(comment),\r",
-									"        options: { raw: { language: 'json' } }\r",
-									"    });\r",
 									"};\r",
 									"\r",
 									"const interval = setInterval(() => {}, 1000);\r",
@@ -397,6 +402,15 @@
 					"request": {
 						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{requestBody}}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId/events/:eventId/comments",
 							"host": [
@@ -446,15 +460,10 @@
 									"        comment = {\r",
 									"        text: text\r",
 									"        };\r",
+									"        pm.variables.set(\"requestBody\", JSON.stringify(comment));\r",
 									"    } catch(err) {\r",
 									"        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
 									"    }\r",
-									"\r",
-									"    pm.request.body.update({\r",
-									"        mode: 'raw',\r",
-									"        raw: JSON.stringify(comment),\r",
-									"        options: { raw: { language: 'json' } }\r",
-									"    });\r",
 									"};\r",
 									"\r",
 									"const interval = setInterval(() => {}, 1000);\r",
@@ -494,6 +503,15 @@
 					"request": {
 						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{requestBody}}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId/events/:eventId/comments",
 							"host": [
@@ -1762,15 +1780,11 @@
 									"        pm.collectionVariables.set(\"comm\", oldComment)\r",
 									"        pm.collectionVariables.set(\"commentId\", oldComment.id)\r",
 									"        comment = rnd.getComment();\r",
+									"        pm.variables.set(\"requestBody\", JSON.stringify(comment));\r",
 									"    } catch(err) {\r",
 									"        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
 									"    }\r",
 									"\r",
-									"    pm.request.body.update({\r",
-									"        mode: 'raw',\r",
-									"        raw: JSON.stringify(comment),\r",
-									"        options: { raw: { language: 'json' } }\r",
-									"    });\r",
 									"};\r",
 									"\r",
 									"const interval = setInterval(() => {}, 1000);\r",
@@ -1845,6 +1859,15 @@
 					"request": {
 						"method": "PATCH",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{{requestBody}}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{baseUrl}}/users/:userId/events/:eventId/comments/:commentId",
 							"host": [
