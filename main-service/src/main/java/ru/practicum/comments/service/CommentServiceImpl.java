@@ -70,12 +70,12 @@ public class CommentServiceImpl implements CommentService {
     public CommentFullDto update(NewCommentDto newComment, CommentParam param) {
         Comment existingComment = checkIfExist(param.getUserId(), param.getEventId(), param.getCommentId());
         if (!existingComment.getAuthor().getId().equals(param.getUserId())) {
-            throw new ValidationException("User with id " + param.getUserId() + " is not author of comment " + existingComment.getId());
+            throw new ForbiddenException("User with id " + param.getUserId() + " is not author of comment " + existingComment.getId());
         }
 
         if (existingComment.getState() == State.PUBLISHED) {
             existingComment.setState(State.PENDING);
-        } else if (existingComment.getState() != State.PENDING) {
+        } else if (existingComment.getState() == State.CANCELED) {
             throw new ConflictException("Cannot update canceled comment with id " + existingComment.getState().name());
         }
 
