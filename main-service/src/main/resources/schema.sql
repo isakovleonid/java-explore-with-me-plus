@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS compilation_events
 CREATE TABLE IF NOT EXISTS comments
 (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    text            VARCHAR(2000)                   NOT NULL,
+    text            VARCHAR(7000)                   NOT NULL,
     event_id        BIGINT REFERENCES events (id)   ON DELETE CASCADE NOT NULL,
     author_id       BIGINT REFERENCES users (id)    ON DELETE CASCADE NOT NULL,
     created_on      TIMESTAMP                       NOT NULL,
