@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.comments.dto.in.CommentParam;
 import ru.practicum.comments.dto.in.GetCommentParam;
 import ru.practicum.comments.dto.in.NewCommentDto;
@@ -13,11 +14,13 @@ import ru.practicum.comments.dto.output.CommentFullDto;
 import ru.practicum.comments.dto.output.CommentShortDto;
 import ru.practicum.comments.mapper.CommentMapper;
 import ru.practicum.comments.model.Comment;
+import ru.practicum.comments.model.StateFilter;
 import ru.practicum.comments.storage.CommentRepository;
 import ru.practicum.events.model.Event;
 import ru.practicum.events.model.State;
 import ru.practicum.events.storage.EventRepository;
 import ru.practicum.exceptions.ConflictException;
+import ru.practicum.exceptions.ForbiddenException;
 import ru.practicum.exceptions.NotFoundException;
 import ru.practicum.users.model.User;
 import ru.practicum.users.storage.UserRepository;
@@ -57,7 +60,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = checkIfExist(param.getUserId(), param.getEventId(), param.getCommentId());
 
         if (!comment.getAuthor().getId().equals(param.getUserId())) {
-            throw new ValidationException("User with id " + param.getUserId() + " is not author of comment " + comment.getId());
+            throw new ForbiddenException("User with id " + param.getUserId() + " is not author of comment " + comment.getId());
         }
 
         commentRepository.deleteById(param.getCommentId());
@@ -86,20 +89,30 @@ public class CommentServiceImpl implements CommentService {
 
     public CommentFullDto getComment(CommentParam param) {
         Comment comment = checkIfExist(param.getUserId(), param.getEventId(), param.getCommentId());
+
+        if (!comment.getAuthor().getId().equals(param.getUserId()) && comment.getState() != State.PUBLISHED) {
+            throw new ForbiddenException("Cannot get comment with id " + comment.getState().name());
+        }
+
+        if (!comment.getAuthor().getId().equals(param.getUserId())) {
+            comment.setPublishedOn(null);
+            comment.setState(null);
+        }
         return commentMapper.toCommentDto(comment);
     }
 
+    @Transactional(readOnly = true)
     public List<CommentFullDto> getCommentsByEventId(Long eventId, GetCommentParam param) {
         Long userId = param.getUserId();
         Integer from = param.getFrom();
-        Integer to = param.getTo();
+        Integer size = param.getSize();
         List<Comment> comments;
-        if (to == 0) {
+        if (size == 0) {
             comments = commentRepository.findByEventIdAndAuthorIdAndState(userId, eventId, State.PUBLISHED).stream()
                     .skip(from)
                     .toList();
-        } else if (from < to && to > 0) {
-            PageRequest pageRequest = PageRequest.of(from / to, to);
+        } else if (from < size && size > 0) {
+            PageRequest pageRequest = PageRequest.of(from / size, size);
             comments = commentRepository.findByEventIdAndAuthorIdAndState(userId, eventId, State.PUBLISHED, pageRequest);
         } else {
             return List.of();
@@ -109,18 +122,16 @@ public class CommentServiceImpl implements CommentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<CommentFullDto> getComments(GetCommentParam param) {
-        Long userId = param.getUserId();
-        Integer from = param.getFrom();
-        Integer to = param.getTo();
+        userRepository.findById(param.getUserId())
+                .orElseThrow(() -> new NotFoundException("user with id " + param.getUserId() + " not found"));
+
         List<Comment> comments;
-        if (to == 0) {
-            comments = commentRepository.findByAuthorIdAndState(userId, State.PUBLISHED).stream()
-                    .skip(from)
-                    .toList();
-        } else if (from < to && to > 0) {
-            PageRequest pageRequest = PageRequest.of(from / to, to);
-            comments = commentRepository.findByAuthorIdAndState(userId, State.PUBLISHED, pageRequest);
+        if (param.getSize() == 0) {
+            comments = getCommentsWithoutPagination(param);
+        } else if (param.getFrom() < param.getSize() && param.getSize() > 0) {
+            comments = getCommentsWithPagination(param);
         } else {
             return List.of();
         }
@@ -128,6 +139,32 @@ public class CommentServiceImpl implements CommentService {
         return comments.stream()
                 .map(commentMapper::toCommentDto)
                 .toList();
+    }
+
+    private List<Comment> getCommentsWithoutPagination(GetCommentParam param) {
+        List<Comment> result = param.getStatus() == StateFilter.ALL
+                ? commentRepository.findByAuthorId(param.getUserId())
+                : commentRepository.findByAuthorIdAndState(param.getUserId(), toState(param.getStatus()));
+
+        return result.stream()
+                .skip(param.getFrom())
+                .toList();
+    }
+
+    private List<Comment> getCommentsWithPagination(GetCommentParam param) {
+        PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
+        return param.getStatus() == StateFilter.ALL
+                ? commentRepository.findByAuthorId(param.getUserId(), pageRequest)
+                : commentRepository.findByAuthorIdAndState(param.getUserId(), toState(param.getStatus()), pageRequest);
+    }
+
+    private State toState(StateFilter filter) {
+        return switch (filter) {
+            case PENDING -> State.PENDING;
+            case PUBLISHED -> State.PUBLISHED;
+            case CANCELED -> State.CANCELED;
+            case ALL -> throw new IllegalArgumentException("ALL is not a valid State");
+        };
     }
 
     private Comment checkIfExist(Long userId, Long eventId, Long commentId) {

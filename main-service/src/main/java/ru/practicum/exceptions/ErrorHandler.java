@@ -153,7 +153,6 @@ public class ErrorHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
-
         ErrorResponse response = new ErrorResponse(
                 "Incorrectly made request.",
                 ex.getMessage(),
@@ -163,5 +162,20 @@ public class ErrorHandler {
 
         log.error("Illegal Argument error: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException ex) {
+
+        ErrorResponse response = new ErrorResponse(
+                "Forbidden operation",
+                ex.getMessage(),
+                HttpStatus.FORBIDDEN,
+                LocalDateTime.now().format(FORMATTER)
+        );
+
+        log.error("Forbidden error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 }
