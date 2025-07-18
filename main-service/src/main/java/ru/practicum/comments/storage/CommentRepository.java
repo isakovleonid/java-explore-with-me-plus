@@ -5,12 +5,17 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import ru.practicum.comments.model.Comment;
 import ru.practicum.events.model.State;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByEventIdAndAuthorIdAndState(Long eventId, Long authorId, State state, Pageable pageable);
 
+    List<Comment> findByEventIdAndState(Long eventId, State state, Pageable pageable);
+
     List<Comment> findByEventIdAndAuthorIdAndState(Long eventId, Long authorId, State state);
+
+    List<Comment> findByEventIdAndState(Long eventId, State state);
 
     List<Comment> findByAuthorIdAndState(Long eventId, State status, Pageable pageable);
 
@@ -19,4 +24,12 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByAuthorId(Long eventId);
 
     List<Comment> findByAuthorId(Long eventId, Pageable pageable);
+
+    List<Comment> findByCreatedOnBetween(LocalDateTime start, LocalDateTime end);
+
+    List<Comment> findByCreatedOnBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
+
+    List<Comment> findByStateAndCreatedOnBetween(State state, LocalDateTime start, LocalDateTime end);
+
+    List<Comment> findByStateAndCreatedOnBetween(State state, LocalDateTime start, LocalDateTime end, Pageable pageable);
 }

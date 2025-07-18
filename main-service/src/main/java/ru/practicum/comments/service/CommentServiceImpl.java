@@ -6,9 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.comments.dto.in.CommentParam;
-import ru.practicum.comments.dto.in.GetCommentParam;
-import ru.practicum.comments.dto.in.NewCommentDto;
+import ru.practicum.comments.dto.in.*;
 import ru.practicum.comments.dto.output.CommentFullDto;
 import ru.practicum.comments.dto.output.CommentShortDto;
 import ru.practicum.comments.mapper.CommentMapper;
@@ -66,6 +64,12 @@ public class CommentServiceImpl implements CommentService {
         log.info("Comment {} was deleted", comment);
     }
 
+    public void delete(Long commentId) {
+        checkIfExist(commentId);
+        commentRepository.deleteById(commentId);
+        log.info("Comment with id = {} was deleted by admin", commentId);
+    }
+
     public CommentFullDto update(NewCommentDto newComment, CommentParam param) {
         Comment existingComment = checkIfExist(param.getUserId(), param.getEventId(), param.getCommentId());
         if (!existingComment.getAuthor().getId().equals(param.getUserId())) {
@@ -83,6 +87,22 @@ public class CommentServiceImpl implements CommentService {
         Comment updatedComment = commentRepository.save(existingComment);
         log.info("Comment was updated with id={}, old name='{}', new name='{}'",
                 param.getCommentId(), existingComment.getText(), newComment.getText());
+        return commentMapper.toCommentDto(updatedComment);
+    }
+
+    public CommentFullDto update(Long commentId, String filter) {
+
+        State stateForUpdating = toState(filter);
+        Comment existingComment = checkIfExist(commentId);
+
+        if (existingComment.getState() != State.PENDING) {
+            throw new ConflictException("Cannot update comment with state not PENDING");
+        }
+
+        existingComment.setState(stateForUpdating);
+
+        Comment updatedComment = commentRepository.save(existingComment);
+        log.info("Comment with id={} was updated with status {}", commentId, stateForUpdating);
         return commentMapper.toCommentDto(updatedComment);
     }
 
@@ -122,9 +142,51 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Transactional(readOnly = true)
+    public List<CommentFullDto> getCommentsByEventId(CommentPublicParam param) {
+        checkEventIfExist(param.getEventId());
+
+        Integer from = param.getFrom();
+        Integer size = param.getSize();
+        List<Comment> comments;
+
+        if (size == 0) {
+            comments = commentRepository.findByEventIdAndState(param.getEventId(), State.PUBLISHED).stream()
+                    .skip(from)
+                    .toList();
+        } else if (from < size && size > 0) {
+            PageRequest pageRequest = PageRequest.of(from / size, size);
+            comments = commentRepository.findByEventIdAndState(param.getEventId(), State.PUBLISHED, pageRequest);
+        } else {
+            return List.of();
+        }
+        return comments.stream()
+                .map(commentMapper::toCommentDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<CommentFullDto> getComments(GetCommentParam param) {
         userRepository.findById(param.getUserId())
                 .orElseThrow(() -> new NotFoundException("user with id " + param.getUserId() + " not found"));
+
+        List<Comment> comments;
+        if (param.getSize() == 0) {
+            comments = getCommentsWithoutPagination(param);
+        } else if (param.getFrom() < param.getSize() && param.getSize() > 0) {
+            comments = getCommentsWithPagination(param);
+        } else {
+            return List.of();
+        }
+
+        return comments.stream()
+                .map(commentMapper::toCommentDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommentFullDto> getComments(CommentAdminParam param) {
+
+        dateValidation(param);
 
         List<Comment> comments;
         if (param.getSize() == 0) {
@@ -157,12 +219,41 @@ public class CommentServiceImpl implements CommentService {
                 : commentRepository.findByAuthorIdAndState(param.getUserId(), toState(param.getStatus()), pageRequest);
     }
 
+    private List<Comment> getCommentsWithoutPagination(CommentAdminParam param) {
+
+        List<Comment> result = param.getStatus() == StateFilter.ALL
+                ? commentRepository.findByCreatedOnBetween(param.getStart(), param.getEnd())
+                : commentRepository.findByStateAndCreatedOnBetween(
+                        toState(param.getStatus()), param.getStart(), param.getEnd());
+
+        return result.stream()
+                .skip(param.getFrom())
+                .toList();
+    }
+
+    private List<Comment> getCommentsWithPagination(CommentAdminParam param) {
+        PageRequest pageRequest = PageRequest.of(param.getFrom() / param.getSize(), param.getSize());
+        return param.getStatus() == StateFilter.ALL
+                ? commentRepository.findByCreatedOnBetween(param.getStart(), param.getEnd(), pageRequest)
+                : commentRepository.findByStateAndCreatedOnBetween(
+                        toState(param.getStatus()), param.getStart(), param.getEnd(), pageRequest);
+    }
+
     private State toState(StateFilter filter) {
         return switch (filter) {
             case PENDING -> State.PENDING;
             case PUBLISHED -> State.PUBLISHED;
             case CANCELED -> State.CANCELED;
             case ALL -> throw new IllegalArgumentException("ALL is not a valid State");
+        };
+    }
+
+    private State toState(String filter) {
+        return switch (filter) {
+            case "APPROVE" -> State.PUBLISHED;
+            case "REJECT" -> State.CANCELED;
+            default -> throw new IllegalArgumentException(
+                    "Parameter action must be APPROVE or REJECT, but action = " + filter);
         };
     }
 
@@ -173,5 +264,21 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new NotFoundException("event with id " + eventId + " not found"));
         return commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("comment with id " + commentId + " not found"));
+    }
+
+    private Comment checkIfExist(Long commentId) {
+        return commentRepository.findById(commentId)
+                .orElseThrow(() -> new NotFoundException("comment with id " + commentId + " not found"));
+    }
+
+    private void checkEventIfExist(Long eventId) {
+        eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("event with id " + eventId + " not found"));
+    }
+
+    private static void dateValidation(CommentAdminParam param) {
+        if (param.getStart().isAfter(param.getEnd())) {
+            throw new IllegalArgumentException("Start date cannot be after end date");
+        }
     }
 }
