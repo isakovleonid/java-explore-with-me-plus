@@ -23,11 +23,10 @@ public class UserCommentsController {
     private final CommentService commentService;
 
     @PostMapping("/events/{eventId}/comments")
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.CREATED)
     public CommentShortDto create(@Valid @RequestBody NewCommentDto newCommentDto,
                                   @PathVariable Long userId,
                                   @PathVariable Long eventId) {
-        log.info("Create comment user with userId {} for event with eventId {}.", userId, eventId);
         return commentService.create(newCommentDto, userId, eventId);
     }
 
@@ -56,7 +55,6 @@ public class UserCommentsController {
     public CommentFullDto getComment(@PathVariable Long userId,
                                      @PathVariable Long eventId,
                                      @PathVariable Long commentId) {
-        log.info("Get comment with commentId {} user with userId {} for event with eventId {}.", commentId, userId, eventId);
         CommentParam param = new CommentParam(userId, eventId, commentId);
         return commentService.getComment(param);
     }
