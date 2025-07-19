@@ -143,7 +143,7 @@ public class CommentServiceImpl implements CommentService {
                     .toList();
         } else if (from < size && size > 0) {
             PageRequest pageRequest = PageRequest.of(from / size, size);
-            comments = commentRepository.findByEventIdAndAuthorIdAndState(userId, eventId, State.PUBLISHED, pageRequest);
+            comments = commentRepository.findByEventIdAndAuthorIdAndState(eventId, userId, State.PUBLISHED, pageRequest);
         } else {
             return List.of();
         }
