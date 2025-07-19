@@ -11,6 +11,7 @@ import ru.practicum.comments.dto.in.GetCommentParam;
 import ru.practicum.comments.dto.in.NewCommentDto;
 import ru.practicum.comments.dto.output.CommentFullDto;
 import ru.practicum.comments.dto.output.CommentShortDto;
+import ru.practicum.comments.model.StateFilter;
 import ru.practicum.comments.service.CommentService;
 
 import java.util.List;
@@ -52,6 +53,7 @@ public class UserCommentsController {
     }
 
     @GetMapping("/events/{eventId}/comments/{commentId}")
+    @ResponseStatus(HttpStatus.OK)
     public CommentFullDto getComment(@PathVariable Long userId,
                                      @PathVariable Long eventId,
                                      @PathVariable Long commentId) {
@@ -60,21 +62,24 @@ public class UserCommentsController {
     }
 
     @GetMapping("/events/{eventId}/comments")
+    @ResponseStatus(HttpStatus.OK)
     public List<CommentFullDto> getCommentsByEventId(@PathVariable Long userId,
                                                      @PathVariable Long eventId,
                                                      @RequestParam(defaultValue = "0") @Min(0) Integer from,
-                                                     @RequestParam(defaultValue = "10") @Min(0) Integer to) {
+                                                     @RequestParam(defaultValue = "10") @Min(0) Integer size) {
         log.info("Get comments user with userId {} for event with eventId {}.", userId, eventId);
-        GetCommentParam param = new GetCommentParam(userId, from, to);
+        GetCommentParam param = new GetCommentParam(userId, from, size, null);
         return commentService.getCommentsByEventId(userId, param);
     }
 
     @GetMapping("/comments")
+    @ResponseStatus(HttpStatus.OK)
     public List<CommentFullDto> getComments(@PathVariable Long userId,
                                             @RequestParam(defaultValue = "0") @Min(0) Integer from,
-                                            @RequestParam(defaultValue = "10") @Min(0) Integer to) {
+                                            @RequestParam(defaultValue = "10") @Min(0) Integer size,
+                                            @RequestParam(defaultValue = "ALL") StateFilter state) {
         log.info("Get comments user with userId {}", userId);
-        GetCommentParam param = new GetCommentParam(userId, from, to);
+        GetCommentParam param = new GetCommentParam(userId, from, size, state);
         return commentService.getComments(param);
     }
 }
