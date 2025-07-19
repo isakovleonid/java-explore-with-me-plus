@@ -43,7 +43,7 @@ public class UserCommentsController {
 
     @PatchMapping("/events/{eventId}/comments/{commentId}")
     @ResponseStatus(HttpStatus.OK)
-    public CommentFullDto update(@RequestBody NewCommentDto newCommentDto,
+    public CommentFullDto update(@Valid @RequestBody NewCommentDto newCommentDto,
                                  @PathVariable Long userId,
                                  @PathVariable Long eventId,
                                  @PathVariable Long commentId) {
