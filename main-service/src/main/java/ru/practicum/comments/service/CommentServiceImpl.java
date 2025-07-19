@@ -22,6 +22,7 @@ import ru.practicum.exceptions.NotFoundException;
 import ru.practicum.users.model.User;
 import ru.practicum.users.storage.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -104,6 +105,9 @@ public class CommentServiceImpl implements CommentService {
         }
 
         existingComment.setState(stateForUpdating);
+        if (stateForUpdating.equals(State.PUBLISHED)) {
+            existingComment.setPublishedOn(LocalDateTime.now());
+        }
 
         Comment updatedComment = commentRepository.save(existingComment);
         log.info("Comment with id={} was updated with status {}", commentId, stateForUpdating);
