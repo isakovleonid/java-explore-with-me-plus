@@ -60,3 +60,14 @@ CREATE TABLE IF NOT EXISTS compilation_events
     FOREIGN KEY (compilation_id) REFERENCES compilations (id) ON DELETE CASCADE,
     FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS comments
+(
+    id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    text            VARCHAR(7000)                   NOT NULL,
+    event_id        BIGINT REFERENCES events (id)   ON DELETE CASCADE NOT NULL,
+    author_id       BIGINT REFERENCES users (id)    ON DELETE CASCADE NOT NULL,
+    created_on      TIMESTAMP                       NOT NULL,
+    published_on    TIMESTAMP,
+    state           VARCHAR DEFAULT 'PENDING'       NOT NULL CHECK (state IN ('PENDING', 'PUBLISHED', 'CANCELED'))
+);
