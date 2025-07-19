@@ -22,8 +22,8 @@ public class CommentShortDto {
     Long id; // Идентификатор комментария
     String text; // Текст комментария
     EventShortDto event; // Краткая информация о событии
-    UserDto author; // Информация об авторе комментария
-    LocalDateTime createdOn; // Дата и время создания комментария
+    UserDto author; // Информация об авторе комментария. Может отсутствовать, если null
+    LocalDateTime createdOn; // Дата и время создания комментария. Может отсутствовать, если null
 }
 ```
 
