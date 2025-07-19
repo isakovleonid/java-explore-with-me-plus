@@ -69,7 +69,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     public void delete(Long commentId) {
-        checkIfExist(commentId);
+        checkCommentIfExists(commentId);
         commentRepository.deleteById(commentId);
         log.info("Comment with id = {} was deleted by admin", commentId);
     }
@@ -101,7 +101,7 @@ public class CommentServiceImpl implements CommentService {
     public CommentFullDto update(Long commentId, String filter) {
 
         State stateForUpdating = toState(filter);
-        Comment existingComment = checkIfExist(commentId);
+        Comment existingComment = checkCommentIfExists(commentId);
 
         if (existingComment.getState() != State.PENDING) {
             throw new ConflictException("Cannot update comment with state not PENDING");
@@ -156,9 +156,53 @@ public class CommentServiceImpl implements CommentService {
                 .toList();
     }
 
+
+    @Transactional(readOnly = true)
+    public List<CommentFullDto> getCommentsByEventId(CommentPublicParam param) {
+        checkEventIfExists(param.getEventId());
+
+        Integer from = param.getFrom();
+        Integer size = param.getSize();
+        List<Comment> comments;
+
+        if (size == 0) {
+            comments = commentRepository.findByEventIdAndState(param.getEventId(), State.PUBLISHED).stream()
+                    .skip(from)
+                    .toList();
+        } else if (from < size && size > 0) {
+            PageRequest pageRequest = PageRequest.of(from / size, size);
+            comments = commentRepository.findByEventIdAndState(param.getEventId(), State.PUBLISHED, pageRequest);
+        } else {
+            return List.of();
+        }
+        return comments.stream()
+                .map(commentMapper::toCommentDto)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public List<CommentFullDto> getComments(GetCommentParam param) {
         checkUserIfExists(param.getUserId());
+        checkUserIfExists(param.getUserId());
+
+        List<Comment> comments;
+        if (param.getSize() == 0) {
+            comments = getCommentsWithoutPagination(param);
+        } else if (param.getFrom() < param.getSize() && param.getSize() > 0) {
+            comments = getCommentsWithPagination(param);
+        } else {
+            return List.of();
+        }
+
+        return comments.stream()
+                .map(commentMapper::toCommentDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommentFullDto> getComments(CommentAdminParam param) {
+
+        dateValidation(param);
 
         List<Comment> comments;
         if (param.getSize() == 0) {
@@ -210,7 +254,6 @@ public class CommentServiceImpl implements CommentService {
                 : commentRepository.findByStateAndCreatedOnBetween(
                 toState(param.getStatus()), param.getStart(), param.getEnd(), pageRequest);
     }
-
 
     private State toState(StateFilter filter) {
         return switch (filter) {

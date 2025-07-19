@@ -13,9 +13,9 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     List<Comment> findByEventIdAndState(Long eventId, State state, Pageable pageable);
 
-    List<Comment> findByEventIdAndAuthorIdAndState(Long eventId, Long authorId, State state);
-
     List<Comment> findByEventIdAndState(Long eventId, State state);
+
+    List<Comment> findByEventIdAndAuthorIdAndState(Long eventId, Long authorId, State state);
 
     List<Comment> findByAuthorIdAndState(Long eventId, State status, Pageable pageable);
 
