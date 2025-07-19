@@ -69,7 +69,7 @@ public class UserCommentsController {
                                                      @RequestParam(defaultValue = "10") @Min(0) Integer size) {
         log.info("Get comments user with userId {} for event with eventId {}.", userId, eventId);
         GetCommentParam param = new GetCommentParam(userId, from, size, null);
-        return commentService.getCommentsByEventId(userId, param);
+        return commentService.getCommentsByEventId(eventId, param);
     }
 
     @GetMapping("/comments")
